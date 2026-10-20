@@ -1,5 +1,6 @@
 #if Tagged
 public import ISO_9075_Foundation
+public import SQL
 public import Tagged
 
 extension Tagged: PostgreSQL.DataType

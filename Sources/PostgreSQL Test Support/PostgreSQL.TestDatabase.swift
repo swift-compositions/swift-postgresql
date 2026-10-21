@@ -2,6 +2,7 @@
     public import ISO_9075_Call_Level_Interface
     public import Logging
     internal import NIOPosix
+    internal import Foundation
     public import PostgreSQL
     public import Testing
 
@@ -54,8 +55,12 @@
                 try await withThrowingTaskGroup { group in
                     group.addTask { await administration.run() }
                     defer { group.cancelAll() }
-                    _ = try await administration.writeWithoutTransaction { connection throws(ISO_9075.Error) in
-                        try connection.execute("CREATE DATABASE \(name)")
+                    do {
+                        _ = try await administration.writeWithoutTransaction { connection throws(ISO_9075.Error) in
+                            try connection.execute("CREATE DATABASE \(name)")
+                        }
+                    } catch ISO_9075.Error.connection(let reason) where ProcessInfo.processInfo.environment["POSTGRES_HOST"] == nil {
+                        try Test.cancel("No PostgreSQL server is reachable at the default address and POSTGRES_HOST is unset: \(reason)")
                     }
                     do {
                         try await withThrowingTaskGroup { clients in

@@ -1,7 +1,7 @@
 internal import Byte
+public import ISO_9075_Foundation
 internal import RFC_4122
 internal import Time
-public import ISO_9075_Foundation
 
 public struct PostgreSQL: ISO_9075.Dialect {
     public init() {}
@@ -13,10 +13,13 @@ public struct PostgreSQL: ISO_9075.Dialect {
         case .timestamp(let instant):
             "TIMESTAMPTZ " + ISO_9075.Literal.character(try ISO_9075.Literal.timestamp(instant) + "+00")
         case .blob(let bytes):
-            ISO_9075.Literal.character("\\x" + bytes.map { byte in
-                let hex = String(byte.bitPattern, radix: 16)
-                return hex.count == 1 ? "0" + hex : hex
-            }.joined()) + "::BYTEA"
+            ISO_9075.Literal.character(
+                "\\x"
+                    + bytes.map { byte in
+                        let hex = String(byte.bitPattern, radix: 16)
+                        return hex.count == 1 ? "0" + hex : hex
+                    }.joined()
+            ) + "::BYTEA"
         case .array(let values, let kind):
             "ARRAY[" + (try values.map { value throws(ISO_9075.Value.Failure) in try literal(value) }).joined(separator: ", ") + "]::"
                 + typeName(kind) + "[]"

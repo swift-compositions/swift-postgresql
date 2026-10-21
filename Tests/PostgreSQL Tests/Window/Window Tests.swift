@@ -16,10 +16,13 @@ import Testing
         let rendering = PostgreSQL().render(
             PostgreSQL.Window.rank().over { $0.order(by: score.points.desc()) }.queryFragment
         )
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"rank() OVER (ORDER BY "scores"."points" DESC)"#,
-            values: []
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"rank() OVER (ORDER BY "scores"."points" DESC)"#,
+                    values: []
+                )
+        )
     }
 
     @Test func `a partition renders before the ordering`() {
@@ -64,20 +67,26 @@ import Testing
         let rendering = PostgreSQL().render(
             price.price.lag().over { $0.order(by: price.day.asc()) }.queryFragment
         )
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"lag("stock_prices"."price", 1) OVER (ORDER BY "stock_prices"."day" ASC)"#,
-            values: []
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"lag("stock_prices"."price", 1) OVER (ORDER BY "stock_prices"."day" ASC)"#,
+                    values: []
+                )
+        )
     }
 
     @Test func `lag binds its default`() {
         let rendering = PostgreSQL().render(
             price.price.lag(offset: 2, default: 0.0).over { $0.order(by: price.day.asc()) }.queryFragment
         )
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"lag("stock_prices"."price", 2, $1) OVER (ORDER BY "stock_prices"."day" ASC)"#,
-            values: [.double(0.0)]
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"lag("stock_prices"."price", 2, $1) OVER (ORDER BY "stock_prices"."day" ASC)"#,
+                    values: [.double(0.0)]
+                )
+        )
     }
 
     @Test func `lead renders its offset`() {
@@ -223,11 +232,13 @@ import Testing
                 .window("by_points") { $0.partition(by: WindowFixtures.Score.columns.playerID).order(by: WindowFixtures.Score.columns.points.desc()) }
                 .query
         )
-        #expect(rendering.sql == """
-            SELECT "scores"."id", rank() OVER "by_points"
-            FROM "scores"
-            WINDOW "by_points" AS (PARTITION BY "scores"."playerID" ORDER BY "scores"."points" DESC)
-            """)
+        #expect(
+            rendering.sql == """
+                SELECT "scores"."id", rank() OVER "by_points"
+                FROM "scores"
+                WINDOW "by_points" AS (PARTITION BY "scores"."playerID" ORDER BY "scores"."points" DESC)
+                """
+        )
     }
 
     @Test func `several windows render in definition order`() {

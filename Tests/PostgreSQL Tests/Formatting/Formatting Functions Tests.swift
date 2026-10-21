@@ -9,20 +9,26 @@ import Time
     let columns = FormattingFixtures.Invoice.columns
 
     @Test func `to_char binds the format for timestamps and numbers`() {
-        #expect(PostgreSQL().render(columns.issuedAt.toChar("YYYY-MM-DD").queryFragment) == ISO_9075.Rendering(
-            sql: #"to_char("invoices"."issuedAt", $1)"#,
-            values: [.text("YYYY-MM-DD")]
-        ))
+        #expect(
+            PostgreSQL().render(columns.issuedAt.toChar("YYYY-MM-DD").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"to_char("invoices"."issuedAt", $1)"#,
+                    values: [.text("YYYY-MM-DD")]
+                )
+        )
         #expect(PostgreSQL().render(columns.amount.toChar("999D99").queryFragment).sql == #"to_char("invoices"."amount", $1)"#)
         #expect(PostgreSQL().render(columns.id.toChar("0000").queryFragment).sql == #"to_char("invoices"."id", $1)"#)
     }
 
     @Test func `parsing functions bind the format`() {
         let date: some QueryExpression<Time.Instant> = columns.reference.toDate(format: "YYYY-MM-DD")
-        #expect(PostgreSQL().render(date.queryFragment) == ISO_9075.Rendering(
-            sql: #"to_date("invoices"."reference", $1)"#,
-            values: [.text("YYYY-MM-DD")]
-        ))
+        #expect(
+            PostgreSQL().render(date.queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"to_date("invoices"."reference", $1)"#,
+                    values: [.text("YYYY-MM-DD")]
+                )
+        )
         #expect(PostgreSQL().render(columns.reference.toTimestamp(format: "YYYY").queryFragment).sql == #"to_timestamp("invoices"."reference", $1)"#)
         #expect(PostgreSQL().render(columns.reference.toNumber(format: "999").queryFragment).sql == #"to_number("invoices"."reference", $1)"#)
     }

@@ -11,20 +11,26 @@ import Testing
         let rendering = PostgreSQL().render(
             PostgreSQL.Comparison.greatest(item.price, item.comparePrice).queryFragment
         )
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"greatest("price_items"."price", "price_items"."comparePrice")"#,
-            values: []
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"greatest("price_items"."price", "price_items"."comparePrice")"#,
+                    values: []
+                )
+        )
     }
 
     @Test func `least binds a value argument`() {
         let rendering = PostgreSQL().render(
             PostgreSQL.Comparison.least(item.price, 100.0, item.comparePrice).queryFragment
         )
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"least("price_items"."price", $1, "price_items"."comparePrice")"#,
-            values: [.double(100.0)]
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"least("price_items"."price", $1, "price_items"."comparePrice")"#,
+                    values: [.double(100.0)]
+                )
+        )
     }
 
     @Test func `null counting accepts mixed types`() {

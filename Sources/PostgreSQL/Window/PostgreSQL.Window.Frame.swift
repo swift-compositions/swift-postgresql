@@ -15,10 +15,11 @@ extension PostgreSQL.Window {
         }
 
         var queryFragment: ISO_9075.Fragment {
-            let extent: ISO_9075.Fragment = switch end {
-            case let end?: "BETWEEN \(start.queryFragment) AND \(end.queryFragment)"
-            case nil: start.queryFragment
-            }
+            let extent: ISO_9075.Fragment =
+                switch end {
+                case let end?: "BETWEEN \(start.queryFragment) AND \(end.queryFragment)"
+                case nil: start.queryFragment
+                }
             let exclusion: ISO_9075.Fragment = self.exclusion.map { " \(raw: $0.rawValue)" } ?? ""
             return "\(raw: unit.rawValue) \(extent)\(exclusion)"
         }

@@ -154,10 +154,11 @@ import Testing
             PostgreSQL().render(
                 PostgreSQL.JSON.buildObject(("name", JSONBFixtures.User.columns.name), ("id", JSONBFixtures.User.columns.id))
                     .queryFragment
-            ) == ISO_9075.Rendering(
-                sql: #"jsonb_build_object($1, "users"."name", $2, "users"."id")"#,
-                values: [.text("name"), .text("id")]
             )
+                == ISO_9075.Rendering(
+                    sql: #"jsonb_build_object($1, "users"."name", $2, "users"."id")"#,
+                    values: [.text("name"), .text("id")]
+                )
         )
         #expect(
             PostgreSQL().render(
@@ -171,13 +172,14 @@ import Testing
             PostgreSQL().render(
                 PostgreSQL.JSON.object(keys: ["name", "email"], values: ["Alice", "alice@example.com"], format: .json)
                     .queryFragment
-            ) == ISO_9075.Rendering(
-                sql: "json_object($1::text[], $2::text[])",
-                values: [
-                    .array([.text("name"), .text("email")], of: .text),
-                    .array([.text("Alice"), .text("alice@example.com")], of: .text),
-                ]
             )
+                == ISO_9075.Rendering(
+                    sql: "json_object($1::text[], $2::text[])",
+                    values: [
+                        .array([.text("name"), .text("email")], of: .text),
+                        .array([.text("Alice"), .text("alice@example.com")], of: .text),
+                    ]
+                )
         )
         #expect(
             PostgreSQL.JSON.object(keys: ["a,b", "}"], values: ["o'brien", "{x}"]).queryFragment.debugDescription

@@ -64,10 +64,13 @@ import Testing
 
     @Test func `a non-text expression is cast to text`() {
         let rendering = PostgreSQL().render(AggregateFixtures.Customer.columns.id.stringAgg().queryFragment)
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"string_agg(CAST("customers"."id" AS TEXT), $1)"#,
-            values: [.text(",")]
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"string_agg(CAST("customers"."id" AS TEXT), $1)"#,
+                    values: [.text(",")]
+                )
+        )
     }
 }
 
@@ -119,10 +122,13 @@ import Testing
 
     @Test func `a continuous percentile binds its fraction and orders within the group`() {
         let rendering = PostgreSQL().render(purchase.amount.percentileCont(0.5).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"percentile_cont($1) WITHIN GROUP (ORDER BY "purchases"."amount")"#,
-            values: [.double(0.5)]
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"percentile_cont($1) WITHIN GROUP (ORDER BY "purchases"."amount")"#,
+                    values: [.double(0.5)]
+                )
+        )
     }
 
     @Test func `a discrete percentile keeps the value type`() {
@@ -145,11 +151,17 @@ import Testing
     }
 
     @Test func `two-variable statistics take both expressions`() {
-        #expect(PostgreSQL().render(purchase.amount.corr(purchase.discount).queryFragment).sql
-            == #"corr("purchases"."amount", "purchases"."discount")"#)
-        #expect(PostgreSQL().render(purchase.amount.covarSamp(purchase.customerID).queryFragment).sql
-            == #"covar_samp("purchases"."amount", "purchases"."customerID")"#)
-        #expect(PostgreSQL().render(purchase.amount.regrSlope(purchase.discount).queryFragment).sql
-            == #"regr_slope("purchases"."amount", "purchases"."discount")"#)
+        #expect(
+            PostgreSQL().render(purchase.amount.corr(purchase.discount).queryFragment).sql
+                == #"corr("purchases"."amount", "purchases"."discount")"#
+        )
+        #expect(
+            PostgreSQL().render(purchase.amount.covarSamp(purchase.customerID).queryFragment).sql
+                == #"covar_samp("purchases"."amount", "purchases"."customerID")"#
+        )
+        #expect(
+            PostgreSQL().render(purchase.amount.regrSlope(purchase.discount).queryFragment).sql
+                == #"regr_slope("purchases"."amount", "purchases"."discount")"#
+        )
     }
 }

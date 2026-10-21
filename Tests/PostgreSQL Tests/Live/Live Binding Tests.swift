@@ -80,11 +80,13 @@
                     }
                 }
             }
-            #expect(fetched == [
-                [[.timestamp(try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 123_456_000)), .text("timestamp with time zone")]],
-                [[.timestamp(Time.Instant(secondsSinceUnixEpoch: 946_684_800)), .text("timestamp with time zone")]],
-                [[.timestamp(try Time.Instant(secondsSinceUnixEpoch: -1, nanosecondFraction: 999_999_000)), .text("timestamp with time zone")]],
-            ])
+            #expect(
+                fetched == [
+                    [[.timestamp(try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 123_456_000)), .text("timestamp with time zone")]],
+                    [[.timestamp(Time.Instant(secondsSinceUnixEpoch: 946_684_800)), .text("timestamp with time zone")]],
+                    [[.timestamp(try Time.Instant(secondsSinceUnixEpoch: -1, nanosecondFraction: 999_999_000)), .text("timestamp with time zone")]],
+                ]
+            )
         }
 
         @Test func `an instant keeps its microseconds through a row`() async throws {

@@ -46,15 +46,17 @@
                 }
                 return changes
             }
-            #expect(changes == [
-                PostgreSQL.Notification.Change(operation: .insert, new: Account(id: 1, owner: "ada", balance: 1), old: nil),
-                PostgreSQL.Notification.Change(
-                    operation: .update,
-                    new: Account(id: 1, owner: "ada", balance: 2),
-                    old: Account(id: 1, owner: "ada", balance: 1)
-                ),
-                PostgreSQL.Notification.Change(operation: .delete, new: nil, old: Account(id: 1, owner: "ada", balance: 2)),
-            ])
+            #expect(
+                changes == [
+                    PostgreSQL.Notification.Change(operation: .insert, new: Account(id: 1, owner: "ada", balance: 1), old: nil),
+                    PostgreSQL.Notification.Change(
+                        operation: .update,
+                        new: Account(id: 1, owner: "ada", balance: 2),
+                        old: Account(id: 1, owner: "ada", balance: 1)
+                    ),
+                    PostgreSQL.Notification.Change(operation: .delete, new: nil, old: Account(id: 1, owner: "ada", balance: 2)),
+                ]
+            )
             try await database.write { connection throws(ISO_9075.Error) in
                 for statement in channel.tearDown(on: Account.self) {
                     try statement.execute(connection)

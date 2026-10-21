@@ -58,7 +58,7 @@ extension PostgreSQL.JSON {
             try next { value in
                 (value as? String)
                     ?? (try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .fragmentsAllowed]))
-                        .map { String(decoding: $0, as: UTF8.self) }
+                    .map { String(decoding: $0, as: UTF8.self) }
             }
         }
 

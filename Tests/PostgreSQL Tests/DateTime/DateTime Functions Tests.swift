@@ -8,20 +8,25 @@ import Time
 @Suite struct `Date and time functions` {
     let timestamp = DateTimeFixtures.Event.columns.timestamp
 
-    @Test(arguments: [
-        (.year, "YEAR"),
-        (.month, "MONTH"),
-        (.day, "DAY"),
-        (.hour, "HOUR"),
-        (.minute, "MINUTE"),
-        (.dow, "DOW"),
-        (.doy, "DOY"),
-    ] as [(PostgreSQL.DateTime.Field<Int>, String)])
+    @Test(
+        arguments: [
+            (.year, "YEAR"),
+            (.month, "MONTH"),
+            (.day, "DAY"),
+            (.hour, "HOUR"),
+            (.minute, "MINUTE"),
+            (.dow, "DOW"),
+            (.doy, "DOY"),
+        ] as [(PostgreSQL.DateTime.Field<Int>, String)]
+    )
     func `extract renders integer fields`(field: PostgreSQL.DateTime.Field<Int>, name: String) {
-        #expect(PostgreSQL().render(timestamp.extract(field).queryFragment) == ISO_9075.Rendering(
-            sql: #"EXTRACT(\#(name) FROM "events"."timestamp")"#,
-            values: []
-        ))
+        #expect(
+            PostgreSQL().render(timestamp.extract(field).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"EXTRACT(\#(name) FROM "events"."timestamp")"#,
+                    values: []
+                )
+        )
     }
 
     @Test func `extract types epoch and second as Double`() {
@@ -32,18 +37,24 @@ import Time
     }
 
     @Test func `extract compares against a bound value`() {
-        #expect(PostgreSQL().render(timestamp.extract(.year).eq(2024).queryFragment) == ISO_9075.Rendering(
-            sql: #"(EXTRACT(YEAR FROM "events"."timestamp")) = ($1)"#,
-            values: [.int(2024)]
-        ))
+        #expect(
+            PostgreSQL().render(timestamp.extract(.year).eq(2024).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"(EXTRACT(YEAR FROM "events"."timestamp")) = ($1)"#,
+                    values: [.int(2024)]
+                )
+        )
     }
 
     @Test(arguments: PostgreSQL.DateTime.Precision.allCases)
     func `date_trunc inlines the precision`(precision: PostgreSQL.DateTime.Precision) {
-        #expect(PostgreSQL().render(timestamp.dateTrunc(precision).queryFragment) == ISO_9075.Rendering(
-            sql: #"DATE_TRUNC('\#(precision.rawValue)', "events"."timestamp")"#,
-            values: []
-        ))
+        #expect(
+            PostgreSQL().render(timestamp.dateTrunc(precision).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"DATE_TRUNC('\#(precision.rawValue)', "events"."timestamp")"#,
+                    values: []
+                )
+        )
     }
 
     @Test func `now renders the function call`() {

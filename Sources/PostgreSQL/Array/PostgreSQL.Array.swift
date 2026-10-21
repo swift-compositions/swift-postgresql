@@ -146,13 +146,16 @@ extension PostgreSQL.Array.Field {
         }
 
         mutating func decode(_ columnType: Int64.Type) throws(QueryDecodingError) -> Int64? {
-            try parsed({ text in
-                switch text {
-                case "t", "true": 1
-                case "f", "false": 0
-                default: Int64(text)
-                }
-            }, as: Int64.self)
+            try parsed(
+                { text in
+                    switch text {
+                    case "t", "true": 1
+                    case "f", "false": 0
+                    default: Int64(text)
+                    }
+                },
+                as: Int64.self
+            )
         }
 
         mutating func decode(_ columnType: UInt64.Type) throws(QueryDecodingError) -> UInt64? {

@@ -109,7 +109,7 @@ extension QueryExpression {
         SQLQueryExpression("to_jsonb(\(self))", as: [Byte].self)
     }
 
-    public func arrayToJson<Element: QueryBindable & QueryDecodable>()-> some QueryExpression<[Byte]>
+    public func arrayToJson<Element: QueryBindable & QueryDecodable>() -> some QueryExpression<[Byte]>
     where QueryValue == PostgreSQL.Array<Element> {
         SQLQueryExpression("array_to_json(\(self))", as: [Byte].self)
     }

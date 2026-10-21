@@ -14,10 +14,13 @@ import Time
     }
 
     @Test func `v7 inlines the shift as an escaped interval literal`() {
-        #expect(PostgreSQL().render(PostgreSQL.UUID.v7(shift: "-1 hour").queryFragment) == ISO_9075.Rendering(
-            sql: "uuidv7('-1 hour'::interval)",
-            values: []
-        ))
+        #expect(
+            PostgreSQL().render(PostgreSQL.UUID.v7(shift: "-1 hour").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: "uuidv7('-1 hour'::interval)",
+                    values: []
+                )
+        )
         #expect(PostgreSQL().render(PostgreSQL.UUID.v7(shift: "1' day").queryFragment).sql == "uuidv7('1'' day'::interval)")
     }
 

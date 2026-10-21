@@ -6,10 +6,13 @@ import Testing
 
 @Suite struct `Binary string functions` {
     @Test func `encode inlines the encoding`() {
-        #expect(PostgreSQL().render(BinaryFixtures.Attachment.columns.content.encode(.hex).queryFragment) == ISO_9075.Rendering(
-            sql: #"encode("attachments"."content", 'hex')"#,
-            values: []
-        ))
+        #expect(
+            PostgreSQL().render(BinaryFixtures.Attachment.columns.content.encode(.hex).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"encode("attachments"."content", 'hex')"#,
+                    values: []
+                )
+        )
     }
 
     @Test func `decode inlines the encoding`() {

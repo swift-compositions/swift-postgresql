@@ -13,10 +13,13 @@ import Time
 
     @Test func `an integer series binds its step`() {
         let rendering = PostgreSQL().render(PostgreSQL.Series.generate(from: 0, through: 100, by: 10).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(
-            sql: "generate_series($1, $2, $3)",
-            values: [.int(0), .int(100), .int(10)]
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: "generate_series($1, $2, $3)",
+                    values: [.int(0), .int(100), .int(10)]
+                )
+        )
     }
 
     @Test func `a timestamp series inlines its interval`() {
@@ -45,20 +48,29 @@ import Time
 
     @Test func `regexp_matches binds its pattern and flags`() {
         let rendering = PostgreSQL().render(title.regexpMatches("a+").queryFragment)
-        #expect(rendering == ISO_9075.Rendering(
-            sql: #"regexp_matches("posts"."title", $1, $2)"#,
-            values: [.text("a+"), .text("g")]
-        ))
+        #expect(
+            rendering
+                == ISO_9075.Rendering(
+                    sql: #"regexp_matches("posts"."title", $1, $2)"#,
+                    values: [.text("a+"), .text("g")]
+                )
+        )
     }
 
     @Test func `regexp_split_to_table binds flags only when given`() {
-        #expect(PostgreSQL().render(title.regexpSplitToTable(",").queryFragment) == ISO_9075.Rendering(
-            sql: #"regexp_split_to_table("posts"."title", $1)"#,
-            values: [.text(",")]
-        ))
-        #expect(PostgreSQL().render(title.regexpSplitToTable(",", flags: "i").queryFragment) == ISO_9075.Rendering(
-            sql: #"regexp_split_to_table("posts"."title", $1, $2)"#,
-            values: [.text(","), .text("i")]
-        ))
+        #expect(
+            PostgreSQL().render(title.regexpSplitToTable(",").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"regexp_split_to_table("posts"."title", $1)"#,
+                    values: [.text(",")]
+                )
+        )
+        #expect(
+            PostgreSQL().render(title.regexpSplitToTable(",", flags: "i").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"regexp_split_to_table("posts"."title", $1, $2)"#,
+                    values: [.text(","), .text("i")]
+                )
+        )
     }
 }

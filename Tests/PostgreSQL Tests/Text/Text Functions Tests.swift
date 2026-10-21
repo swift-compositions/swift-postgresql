@@ -25,17 +25,23 @@ import Testing
     }
 
     @Test func `lpad inlines the length and binds the fill`() {
-        #expect(PostgreSQL().render(name.lpad(to: 10, with: "*").queryFragment) == ISO_9075.Rendering(
-            sql: #"lpad("people"."name", 10, $1)"#,
-            values: [.text("*")]
-        ))
+        #expect(
+            PostgreSQL().render(name.lpad(to: 10, with: "*").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"lpad("people"."name", 10, $1)"#,
+                    values: [.text("*")]
+                )
+        )
     }
 
     @Test func `rpad fills with a space by default`() {
-        #expect(PostgreSQL().render(name.rpad(to: 5).queryFragment) == ISO_9075.Rendering(
-            sql: #"rpad("people"."name", 5, $1)"#,
-            values: [.text(" ")]
-        ))
+        #expect(
+            PostgreSQL().render(name.rpad(to: 5).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"rpad("people"."name", 5, $1)"#,
+                    values: [.text(" ")]
+                )
+        )
     }
 
     @Test func `left and right inline the count`() {
@@ -44,38 +50,53 @@ import Testing
     }
 
     @Test func `split_part binds the delimiter`() {
-        #expect(PostgreSQL().render(name.splitPart(delimiter: "-", field: 2).queryFragment) == ISO_9075.Rendering(
-            sql: #"split_part("people"."name", $1, 2)"#,
-            values: [.text("-")]
-        ))
+        #expect(
+            PostgreSQL().render(name.splitPart(delimiter: "-", field: 2).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"split_part("people"."name", $1, 2)"#,
+                    values: [.text("-")]
+                )
+        )
     }
 
     @Test func `position renders the IN form`() {
-        #expect(PostgreSQL().render(name.position(of: "an").queryFragment) == ISO_9075.Rendering(
-            sql: #"position($1 IN "people"."name")"#,
-            values: [.text("an")]
-        ))
+        #expect(
+            PostgreSQL().render(name.position(of: "an").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"position($1 IN "people"."name")"#,
+                    values: [.text("an")]
+                )
+        )
     }
 
     @Test func `starts_with binds the prefix`() {
-        #expect(PostgreSQL().render(name.startsWith("Al").queryFragment) == ISO_9075.Rendering(
-            sql: #"starts_with("people"."name", $1)"#,
-            values: [.text("Al")]
-        ))
+        #expect(
+            PostgreSQL().render(name.startsWith("Al").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"starts_with("people"."name", $1)"#,
+                    values: [.text("Al")]
+                )
+        )
     }
 
     @Test func `translate binds both character sets`() {
-        #expect(PostgreSQL().render(name.translate(from: "ab", to: "xy").queryFragment) == ISO_9075.Rendering(
-            sql: #"translate("people"."name", $1, $2)"#,
-            values: [.text("ab"), .text("xy")]
-        ))
+        #expect(
+            PostgreSQL().render(name.translate(from: "ab", to: "xy").queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"translate("people"."name", $1, $2)"#,
+                    values: [.text("ab"), .text("xy")]
+                )
+        )
     }
 
     @Test func `overlay with and without a length`() {
-        #expect(PostgreSQL().render(name.overlay(placing: "xx", from: 2, for: 3).queryFragment) == ISO_9075.Rendering(
-            sql: #"overlay("people"."name" PLACING $1 FROM 2 FOR 3)"#,
-            values: [.text("xx")]
-        ))
+        #expect(
+            PostgreSQL().render(name.overlay(placing: "xx", from: 2, for: 3).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"overlay("people"."name" PLACING $1 FROM 2 FOR 3)"#,
+                    values: [.text("xx")]
+                )
+        )
         #expect(PostgreSQL().render(name.overlay(placing: "xx", from: 2).queryFragment).sql == #"overlay("people"."name" PLACING $1 FROM 2)"#)
     }
 
@@ -100,16 +121,22 @@ import Testing
     }
 
     @Test func `concat_ws binds the separator and lists the values`() {
-        #expect(PostgreSQL().render(PostgreSQL.Text.concatenate(separator: ", ", name, nickname).queryFragment) == ISO_9075.Rendering(
-            sql: #"concat_ws($1, "people"."name", "people"."nickname")"#,
-            values: [.text(", ")]
-        ))
+        #expect(
+            PostgreSQL().render(PostgreSQL.Text.concatenate(separator: ", ", name, nickname).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"concat_ws($1, "people"."name", "people"."nickname")"#,
+                    values: [.text(", ")]
+                )
+        )
     }
 
     @Test func `format binds the template and lists the arguments`() {
-        #expect(PostgreSQL().render(PostgreSQL.Text.format("Hello %s, %s", name, 42).queryFragment) == ISO_9075.Rendering(
-            sql: #"format($1, "people"."name", $2)"#,
-            values: [.text("Hello %s, %s"), .int(42)]
-        ))
+        #expect(
+            PostgreSQL().render(PostgreSQL.Text.format("Hello %s, %s", name, 42).queryFragment)
+                == ISO_9075.Rendering(
+                    sql: #"format($1, "people"."name", $2)"#,
+                    values: [.text("Hello %s, %s"), .int(42)]
+                )
+        )
     }
 }

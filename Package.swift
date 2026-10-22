@@ -36,7 +36,7 @@ let package = Package(
         .package(url: "https://github.com/swift-atoms/swift-time.git", branch: "main"),
         .package(
             url: "https://github.com/vapor/postgres-nio.git",
-            revision: "b6cca02c7e0a223814ec45f1a6114983b2fa3c74"
+            revision: "73de31b2494e29720f40096cd8d5f10d292d310b"
         ),
     ],
     targets: [

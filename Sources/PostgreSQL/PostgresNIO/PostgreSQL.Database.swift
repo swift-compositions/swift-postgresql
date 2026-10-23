@@ -3,6 +3,7 @@
     public import Logging
     public import NIOPosix
     public import PostgresNIO
+    internal import Synchronization
 
     extension PostgreSQL {
         public struct Database: ISO_9075.Database, Sendable {
@@ -93,10 +94,19 @@
                 let result: Result<Value, ISO_9075.Error>
                 do {
                     result = try await withoutActuallyEscaping(body) { body in
-                        try await client.withConnection { postgres in
+                        // The pool resumes its continuation before releasing its work item.
+                        // Keep the closure in a box that is cleared before the work returns,
+                        // and also clear it when queued work is cancelled.
+                        let pending = Mutex<(@Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value)?>(body)
+                        defer { pending.withLock { $0 = nil } }
+                        return try await client.withConnection { postgres in
                             try await threadPool.runIfActive { [logger] in
-                                Result { () throws(ISO_9075.Error) in
-                                    try body(PostgreSQL.Connection(postgres, logger: logger))
+                                let work = pending.withLock { work in
+                                    defer { work = nil }
+                                    return work!
+                                }
+                                return Result { () throws(ISO_9075.Error) in
+                                    try work(PostgreSQL.Connection(postgres, logger: logger))
                                 }
                             }
                         }

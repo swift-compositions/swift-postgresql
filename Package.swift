@@ -56,7 +56,7 @@ let package = Package(
         .target(
             name: "PostgreSQL Test Support",
             dependencies: [
-                "PostgreSQL",
+                .target(name: "PostgreSQL"),
                 .product(name: "SQL", package: "swift-sql"),
                 .product(name: "SQL Test Support", package: "swift-sql"),
                 .product(name: "ISO 9075 Foundation", package: "swift-iso-9075"),
@@ -71,8 +71,8 @@ let package = Package(
         .testTarget(
             name: "PostgreSQL Tests",
             dependencies: [
-                "PostgreSQL",
-                "PostgreSQL Test Support",
+                .target(name: "PostgreSQL"),
+                .target(name: "PostgreSQL Test Support"),
                 .product(name: "SQL", package: "swift-sql"),
                 .product(name: "SQL Macros", package: "swift-sql"),
                 .product(name: "SQL Migrations", package: "swift-sql"),

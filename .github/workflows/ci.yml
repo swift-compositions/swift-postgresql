@@ -25,3 +25,79 @@ jobs:
     if: ${{ !github.event.repository.private }}
     name: ci / matrix
     uses: swift-institute/.github/.github/workflows/swift-ci.yml@main
+
+  # The shared workflow above skips a private repository and has no PostgreSQL server, so this job runs every suite,
+  # the live ones included, against a postgres:18 service container (#26): once over a plain connection, and once
+  # against a server that requires TLS, with every suite connecting `verified` to a certificate made here for
+  # `localhost` alone. POSTGRES_HOST is set in both legs, so a server that doesn't answer fails the live suites
+  # instead of cancelling them.
+  live:
+    name: live / linux / ${{ matrix.tls }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        tls: [disabled, verified]
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: swift
+          POSTGRES_PASSWORD: swift
+          POSTGRES_DB: swift_postgresql_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U swift -d swift_postgresql_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: live-${{ matrix.tls }}-${{ hashFiles('Package.swift') }}-${{ github.sha }}
+          restore-keys: |
+            live-${{ matrix.tls }}-${{ hashFiles('Package.swift') }}-
+            live-${{ matrix.tls }}-
+
+      - name: Require TLS on the server, with a certificate for localhost alone
+        if: matrix.tls == 'verified'
+        run: |
+          set -eu
+          mkdir -p tls && cd tls
+          openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj "/CN=swift-postgresql test CA" -keyout ca.key -out ca.pem
+          openssl req -newkey rsa:2048 -nodes -subj "/CN=localhost" -keyout server.key -out server.csr
+          printf 'subjectAltName=DNS:localhost\nbasicConstraints=CA:FALSE\nextendedKeyUsage=serverAuth\n' > server.ext
+          openssl x509 -req -in server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -days 2 -extfile server.ext -out server.crt
+          id="${{ job.services.postgres.id }}"
+          docker cp server.crt "$id:/var/lib/postgresql/server.crt"
+          docker cp server.key "$id:/var/lib/postgresql/server.key"
+          docker exec "$id" sh -c 'chown postgres:postgres /var/lib/postgresql/server.* && chmod 600 /var/lib/postgresql/server.key'
+          psql() { docker exec -u postgres "$id" psql -U swift -d swift_postgresql_test -v ON_ERROR_STOP=1 "$@"; }
+          hba="$(psql -Atc 'SHOW hba_file')"
+          docker exec "$id" sh -c "printf 'local all all trust\nhostssl all all all scram-sha-256\nhostnossl all all all reject\n' > '$hba'"
+          psql -c "ALTER SYSTEM SET ssl = on" \
+               -c "ALTER SYSTEM SET ssl_cert_file = '/var/lib/postgresql/server.crt'" \
+               -c "ALTER SYSTEM SET ssl_key_file = '/var/lib/postgresql/server.key'" \
+               -c "SELECT pg_reload_conf()"
+          sleep 1
+          psql -Atc "SHOW ssl" | grep -qx on
+          if docker exec "$id" psql "host=127.0.0.1 user=swift password=swift dbname=swift_postgresql_test sslmode=disable" -c 'SELECT 1'; then
+            echo "the server still accepts a connection without TLS"; exit 1
+          fi
+          echo "POSTGRES_SSLMODE=verify-full" >> "$GITHUB_ENV"
+          echo "POSTGRES_SSLROOTCERT=/package/tls/ca.pem" >> "$GITHUB_ENV"
+          echo "POSTGRES_TLS_MISMATCHED_HOST=mismatched.test" >> "$GITHUB_ENV"
+
+      - name: swift test --traits PostgresNIO,Tagged
+        run: |
+          docker run --rm --network host -v "$PWD:/package" -w /package \
+            -e POSTGRES_HOST=localhost -e POSTGRES_PORT=5432 \
+            -e POSTGRES_USER=swift -e POSTGRES_PASSWORD=swift -e POSTGRES_DB=swift_postgresql_test \
+            -e POSTGRES_SSLMODE -e POSTGRES_SSLROOTCERT -e POSTGRES_TLS_MISMATCHED_HOST \
+            swift:6.4-noble \
+            sh -c 'echo "127.0.0.1 mismatched.test" >> /etc/hosts && swift test --traits PostgresNIO,Tagged'

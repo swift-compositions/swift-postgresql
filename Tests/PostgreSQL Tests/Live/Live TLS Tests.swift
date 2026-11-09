@@ -7,8 +7,8 @@
 
     /// Against a server that requires TLS, whose certificate is for the test configuration's host name and signed by
     /// the root in `POSTGRES_SSLROOTCERT`, and that is also reachable as `POSTGRES_TLS_MISMATCHED_HOST`, a host name
-    /// its certificate is not for. `Scripts/tls-certificates.sh` makes such a certificate for `localhost`; the
-    /// workflow's TLS leg serves it, and adds `mismatched.test` for 127.0.0.1 to /etc/hosts.
+    /// its certificate is not for. The `live` job's TLS leg in `.github/workflows/ci.yml` makes such a certificate for
+    /// `localhost`, serves it, and adds `mismatched.test` for 127.0.0.1 to /etc/hosts.
     @Suite(
         .serialized,
         .enabled(

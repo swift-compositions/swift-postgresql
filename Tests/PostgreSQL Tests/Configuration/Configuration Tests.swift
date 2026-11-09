@@ -61,11 +61,12 @@ import Testing
         }
     }
 
-    @Test func `defaults the test configuration to the local test database`() {
-        let configuration = PostgreSQL.Configuration.test(environment: [:])
+    @Test func `defaults the test configuration to the local test database, as the current user`() {
+        let configuration = PostgreSQL.Configuration.test(environment: ["USER": "maker"])
         #expect(configuration.host == "localhost")
         #expect(configuration.port == 5432)
-        #expect(configuration.user == "coen")
+        #expect(configuration.user == "maker")
+        #expect(PostgreSQL.Configuration.test(environment: [:]).user == "postgres")
         #expect(configuration.password == nil)
         #expect(configuration.database == "swift_postgresql_test")
         #expect(configuration.tls == .disabled)

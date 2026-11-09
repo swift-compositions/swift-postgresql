@@ -40,12 +40,18 @@ public import PostgreSQL
                 isolated.poolSize = 4
                 var single = configuration
                 single.poolSize = 1
-                let administration = try PostgreSQL.Database(configuration: single)
+                var administration = try PostgreSQL.Database(configuration: single)
                 let database = try PostgreSQL.Database(configuration: isolated)
                 defer { _ = (administration, database) }
                 do {
-                    _ = try await administration.writeWithoutTransaction { connection in
-                        try connection.execute("CREATE DATABASE \(name)")
+                    do {
+                        try await create(name, on: administration)
+                    } catch let error as PostgreSQL.Error where error.code == .invalidCatalogName {
+                        // No database of the configured name to administer from: every server has `postgres`.
+                        await administration.close()
+                        single.database = "postgres"
+                        administration = try PostgreSQL.Database(configuration: single)
+                        try await create(name, on: administration)
                     }
                 } catch let error as PostgreSQL.Error where [.connect, .timeout].contains(error.kind)
                     && ProcessInfo.processInfo.environment["POSTGRES_HOST"] == nil
@@ -69,6 +75,12 @@ public import PostgreSQL
                 await database.close()
                 try await drop(name, on: administration)
                 await administration.close()
+            }
+
+            private func create(_ name: ISO_9075.Identifier, on administration: PostgreSQL.Database) async throws {
+                _ = try await administration.writeWithoutTransaction { connection in
+                    try connection.execute("CREATE DATABASE \(name)")
+                }
             }
 
             private func drop(_ name: ISO_9075.Identifier, on administration: PostgreSQL.Database) async throws {

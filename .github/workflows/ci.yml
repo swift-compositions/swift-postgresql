@@ -100,4 +100,4 @@ jobs:
             -e POSTGRES_USER=swift -e POSTGRES_PASSWORD=swift -e POSTGRES_DB=swift_postgresql_test \
             -e POSTGRES_SSLMODE -e POSTGRES_SSLROOTCERT -e POSTGRES_TLS_MISMATCHED_HOST \
             swift:6.4-noble \
-            sh -c 'echo "127.0.0.1 mismatched.test" >> /etc/hosts && swift test --traits PostgresNIO,Tagged'
+            sh -c 'echo "127.0.0.1 mismatched.test" >> /etc/hosts; swift test --traits PostgresNIO,Tagged; status=$?; chmod -R a+rwX .build; exit $status'

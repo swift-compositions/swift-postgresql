@@ -7,8 +7,8 @@ import Testing
 @Suite struct `Comparison functions` {
     let item = ComparisonFixtures.Item.columns
 
-    @Test func `greatest renders every argument`() {
-        let rendering = PostgreSQL().render(
+    @Test func `greatest renders every argument`() throws {
+        let rendering = try PostgreSQL().render(
             PostgreSQL.Comparison.greatest(item.price, item.comparePrice).queryFragment
         )
         #expect(
@@ -20,8 +20,8 @@ import Testing
         )
     }
 
-    @Test func `least binds a value argument`() {
-        let rendering = PostgreSQL().render(
+    @Test func `least binds a value argument`() throws {
+        let rendering = try PostgreSQL().render(
             PostgreSQL.Comparison.least(item.price, 100.0, item.comparePrice).queryFragment
         )
         #expect(
@@ -33,13 +33,13 @@ import Testing
         )
     }
 
-    @Test func `null counting accepts mixed types`() {
+    @Test func `null counting accepts mixed types`() throws {
         #expect(
-            PostgreSQL().render(PostgreSQL.Comparison.numNulls(item.note, item.code).queryFragment).sql
+            try PostgreSQL().render(PostgreSQL.Comparison.numNulls(item.note, item.code).queryFragment).sql
                 == #"num_nulls("price_items"."note", "price_items"."code")"#
         )
         #expect(
-            PostgreSQL().render(PostgreSQL.Comparison.numNonNulls(item.note, item.code, item.price).queryFragment).sql
+            try PostgreSQL().render(PostgreSQL.Comparison.numNonNulls(item.note, item.code, item.price).queryFragment).sql
                 == #"num_nonnulls("price_items"."note", "price_items"."code", "price_items"."price")"#
         )
     }

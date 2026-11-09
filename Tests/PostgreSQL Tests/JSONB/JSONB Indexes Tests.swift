@@ -6,9 +6,9 @@ import SQL_Macros
 import Testing
 
 @Suite struct `JSONB indexes` {
-    @Test func `gin index with the default operator class`() {
+    @Test func `gin index with the default operator class`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.settings).queryFragment)
+            try PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.settings).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"CREATE INDEX "idx_users_settings_gin" ON "users" USING GIN ("settings")"#,
                     values: []
@@ -16,32 +16,32 @@ import Testing
         )
     }
 
-    @Test func `gin index with the path operator class and a custom name`() {
+    @Test func `gin index with the path operator class and a custom name`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 JSONBFixtures.User.createGINIndex(name: "custom_idx", on: \.metadata, operatorClass: .jsonbPathOps)
                     .queryFragment
             ).sql == #"CREATE INDEX "custom_idx" ON "users" USING GIN ("metadata" jsonb_path_ops)"#
         )
     }
 
-    @Test func `gin index on an optional document column`() {
+    @Test func `gin index on an optional document column`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.preferences).queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.preferences).queryFragment).sql
                 == #"CREATE INDEX "idx_users_preferences_gin" ON "users" USING GIN ("preferences")"#
         )
     }
 
-    @Test func `gin index on a path`() {
+    @Test func `gin index on a path`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.settings, path: ["stats", "visits"]).queryFragment)
+            try PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.settings, path: ["stats", "visits"]).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"CREATE INDEX "idx_users_settings_stats_visits_gin" ON "users" USING GIN (("settings" #> '{"stats","visits"}'::text[]))"#,
                     values: []
                 )
         )
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 JSONBFixtures.User.createGINIndex(on: \.settings, path: ["user", "city"], operatorClass: .jsonbPathOps)
                     .queryFragment
             ).sql
@@ -49,9 +49,9 @@ import Testing
         )
     }
 
-    @Test func `an index path literal quotes elements at the array layer`() {
+    @Test func `an index path literal quotes elements at the array layer`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 JSONBFixtures.User.createGINIndex(name: "idx_reserved", on: \.settings, path: JSONBFixtures.reservedPath)
                     .queryFragment
             ).sql
@@ -59,9 +59,9 @@ import Testing
         )
     }
 
-    @Test func `an index path literal escapes array-literal escape characters`() {
+    @Test func `an index path literal escapes array-literal escape characters`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 JSONBFixtures.User.createGINIndex(name: "idx_escapes", on: \.settings, path: JSONBFixtures.escapePath)
                     .queryFragment
             ).sql
@@ -69,21 +69,21 @@ import Testing
         )
     }
 
-    @Test func `an empty index path stays a typed empty array`() {
+    @Test func `an empty index path stays a typed empty array`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 JSONBFixtures.User.createGINIndex(name: "idx_empty", on: \.settings, path: []).queryFragment
             ).sql == #"CREATE INDEX "idx_empty" ON "users" USING GIN (("settings" #> '{}'::text[]))"#
         )
     }
 
-    @Test func `btree index`() {
+    @Test func `btree index`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.createBTreeIndex(on: \.metadata).queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.createBTreeIndex(on: \.metadata).queryFragment).sql
                 == #"CREATE INDEX "idx_users_metadata_btree" ON "users" USING BTREE ("metadata")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.createBTreeIndex(name: "custom_btree", on: \.settings).queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.createBTreeIndex(name: "custom_btree", on: \.settings).queryFragment).sql
                 == #"CREATE INDEX "custom_btree" ON "users" USING BTREE ("settings")"#
         )
     }

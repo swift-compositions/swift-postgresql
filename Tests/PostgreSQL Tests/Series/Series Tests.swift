@@ -6,13 +6,13 @@ import Testing
 import Time
 
 @Suite struct `Set-returning series` {
-    @Test func `an integer series binds its bounds`() {
-        let rendering = PostgreSQL().render(PostgreSQL.Series.generate(from: 1, through: 10).queryFragment)
+    @Test func `an integer series binds its bounds`() throws {
+        let rendering = try PostgreSQL().render(PostgreSQL.Series.generate(from: 1, through: 10).queryFragment)
         #expect(rendering == ISO_9075.Rendering(sql: "generate_series($1, $2)", values: [.int(1), .int(10)]))
     }
 
-    @Test func `an integer series binds its step`() {
-        let rendering = PostgreSQL().render(PostgreSQL.Series.generate(from: 0, through: 100, by: 10).queryFragment)
+    @Test func `an integer series binds its step`() throws {
+        let rendering = try PostgreSQL().render(PostgreSQL.Series.generate(from: 0, through: 100, by: 10).queryFragment)
         #expect(
             rendering
                 == ISO_9075.Rendering(
@@ -22,22 +22,22 @@ import Time
         )
     }
 
-    @Test func `a timestamp series inlines its interval`() {
+    @Test func `a timestamp series inlines its interval`() throws {
         let event = SeriesFixtures.Event.columns
-        let rendering = PostgreSQL().render(
+        let rendering = try PostgreSQL().render(
             PostgreSQL.Series.generate(from: event.startsAt, through: event.endsAt, every: "1 day").queryFragment
         )
         #expect(rendering.sql == #"generate_series("events"."startsAt", "events"."endsAt", '1 day'::interval)"#)
     }
 
-    @Test func `array subscripts render their dimension`() {
+    @Test func `array subscripts render their dimension`() throws {
         let tags = SeriesFixtures.Post.columns.tags
         #expect(
-            PostgreSQL().render(PostgreSQL.Series.subscripts(of: tags).queryFragment).sql
+            try PostgreSQL().render(PostgreSQL.Series.subscripts(of: tags).queryFragment).sql
                 == #"generate_subscripts("posts"."tags", 1)"#
         )
         #expect(
-            PostgreSQL().render(PostgreSQL.Series.subscripts(of: tags, dimension: 1, reversed: true).queryFragment).sql
+            try PostgreSQL().render(PostgreSQL.Series.subscripts(of: tags, dimension: 1, reversed: true).queryFragment).sql
                 == #"generate_subscripts("posts"."tags", 1, TRUE)"#
         )
     }
@@ -46,8 +46,8 @@ import Time
 @Suite struct `Set-returning regular expressions` {
     let title = SeriesFixtures.Post.columns.title
 
-    @Test func `regexp_matches binds its pattern and flags`() {
-        let rendering = PostgreSQL().render(title.regexpMatches("a+").queryFragment)
+    @Test func `regexp_matches binds its pattern and flags`() throws {
+        let rendering = try PostgreSQL().render(title.regexpMatches("a+").queryFragment)
         #expect(
             rendering
                 == ISO_9075.Rendering(
@@ -57,16 +57,16 @@ import Time
         )
     }
 
-    @Test func `regexp_split_to_table binds flags only when given`() {
+    @Test func `regexp_split_to_table binds flags only when given`() throws {
         #expect(
-            PostgreSQL().render(title.regexpSplitToTable(",").queryFragment)
+            try PostgreSQL().render(title.regexpSplitToTable(",").queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"regexp_split_to_table("posts"."title", $1)"#,
                     values: [.text(",")]
                 )
         )
         #expect(
-            PostgreSQL().render(title.regexpSplitToTable(",", flags: "i").queryFragment)
+            try PostgreSQL().render(title.regexpSplitToTable(",", flags: "i").queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"regexp_split_to_table("posts"."title", $1, $2)"#,
                     values: [.text(","), .text("i")]

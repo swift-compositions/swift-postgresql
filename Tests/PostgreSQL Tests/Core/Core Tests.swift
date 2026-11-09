@@ -37,8 +37,8 @@ enum CoreFixtures {
 }
 
 @Suite struct `The PostgreSQL dialect` {
-    @Test func `numbers its placeholders`() {
-        let rendering = PostgreSQL().render("SELECT \(ISO_9075.Value.int(1)), \(ISO_9075.Value.text("a"))")
+    @Test func `numbers its placeholders`() throws {
+        let rendering = try PostgreSQL().render("SELECT \(ISO_9075.Value.int(1)), \(ISO_9075.Value.text("a"))")
         #expect(rendering == ISO_9075.Rendering(sql: "SELECT $1, $2", values: [.int(1), .text("a")]))
     }
 
@@ -64,14 +64,14 @@ enum CoreFixtures {
         #expect(PostgreSQL().jsonBooleanClose.isEmpty)
     }
 
-    @Test func `compares with IS NOT DISTINCT FROM`() {
-        let rendering = PostgreSQL().render(CoreFixtures.Post.where { $0.title.is(Optional("Taxes")) }.query)
+    @Test func `compares with IS NOT DISTINCT FROM`() throws {
+        let rendering = try PostgreSQL().render(CoreFixtures.Post.where { $0.title.is(Optional("Taxes")) }.query)
         #expect(rendering.sql.contains(#"("posts"."title") IS NOT DISTINCT FROM ($1)"#))
         #expect(rendering.values == [.text("Taxes")])
     }
 
-    @Test func `inserts a draft without a key as DEFAULT`() {
-        let rendering = PostgreSQL().render(CoreFixtures.Post.insert { CoreFixtures.Post.Draft(title: "Hello") }.query)
+    @Test func `inserts a draft without a key as DEFAULT`() throws {
+        let rendering = try PostgreSQL().render(CoreFixtures.Post.insert { CoreFixtures.Post.Draft(title: "Hello") }.query)
         #expect(rendering.sql.hasSuffix("VALUES\n(DEFAULT, $1, $2)"))
         #expect(rendering.values == [.text("Hello"), .array([], of: .text)])
     }
@@ -92,25 +92,25 @@ enum CoreFixtures {
         #expect(Optional<Int>.typeName == "BIGINT")
     }
 
-    @Test func `cast renders CAST AS the type name`() {
+    @Test func `cast renders CAST AS the type name`() throws {
         let fragment = CoreFixtures.Post.columns.id.cast(as: String.self).queryFragment
-        #expect(PostgreSQL().render(fragment).sql == #"CAST("posts"."id" AS TEXT)"#)
+        #expect(try PostgreSQL().render(fragment).sql == #"CAST("posts"."id" AS TEXT)"#)
     }
 
-    @Test func `an integer casts to double precision`() {
-        #expect(PostgreSQL().render(CoreFixtures.Post.columns.id.cast().queryFragment).sql == #"CAST("posts"."id" AS DOUBLE PRECISION)"#)
+    @Test func `an integer casts to double precision`() throws {
+        #expect(try PostgreSQL().render(CoreFixtures.Post.columns.id.cast().queryFragment).sql == #"CAST("posts"."id" AS DOUBLE PRECISION)"#)
     }
 }
 
 @Suite struct `Arrays` {
-    @Test func `bind their elements as one array value`() {
+    @Test func `bind their elements as one array value`() throws {
         let array = PostgreSQL.Array<String>(["a", "b"])
         #expect(array.queryBinding == .array([.text("a"), .text("b")], of: .text))
-        #expect(PostgreSQL().render(array.queryFragment) == ISO_9075.Rendering(sql: "$1", values: [.array([.text("a"), .text("b")], of: .text)]))
+        #expect(try PostgreSQL().render(array.queryFragment) == ISO_9075.Rendering(sql: "$1", values: [.array([.text("a"), .text("b")], of: .text)]))
     }
 
-    @Test func `bind empty with their element kind`() {
-        #expect(PostgreSQL().render(PostgreSQL.Array<Int>([]).queryFragment) == ISO_9075.Rendering(sql: "$1", values: [.array([], of: .int)]))
+    @Test func `bind empty with their element kind`() throws {
+        #expect(try PostgreSQL().render(PostgreSQL.Array<Int>([]).queryFragment) == ISO_9075.Rendering(sql: "$1", values: [.array([], of: .int)]))
         #expect(PostgreSQL.Array<RFC_4122.UUID>([]).queryBinding == .array([], of: .uuid))
     }
 
@@ -118,12 +118,12 @@ enum CoreFixtures {
         #expect(try PostgreSQL().inline("\(ISO_9075.Value.array([], of: .timestamp))") == "ARRAY[]::TIMESTAMPTZ[]")
     }
 
-    @Test func `render a typed empty array`() {
-        #expect(PostgreSQL().render(PostgreSQL.Array<Int>.empty().queryFragment).sql == "ARRAY[]::BIGINT[]")
+    @Test func `render a typed empty array`() throws {
+        #expect(try PostgreSQL().render(PostgreSQL.Array<Int>.empty().queryFragment).sql == "ARRAY[]::BIGINT[]")
     }
 
-    @Test func `construct an array from expressions`() {
-        let rendering = PostgreSQL().render(PostgreSQL.Array<Int>.of([1, 2]).queryFragment)
+    @Test func `construct an array from expressions`() throws {
+        let rendering = try PostgreSQL().render(PostgreSQL.Array<Int>.of([1, 2]).queryFragment)
         #expect(rendering == ISO_9075.Rendering(sql: "ARRAY[$1, $2]", values: [.int(1), .int(2)]))
     }
 
@@ -149,22 +149,22 @@ enum CoreFixtures {
         #expect(try PostgreSQL.Array<String>(decoder: &decoder).elements == [])
     }
 
-    @Test func `reject a multidimensional array`() {
+    @Test func `reject a multidimensional array`() throws {
         var decoder = CoreFixtures.Text(text: "{{1,2},{3,4}}")
         #expect(throws: QueryDecodingError.self) {
             try PostgreSQL.Array<Int>(decoder: &decoder)
         }
     }
 
-    @Test func `reject a null element for a non-optional element type`() {
+    @Test func `reject a null element for a non-optional element type`() throws {
         var decoder = CoreFixtures.Text(text: "{1,NULL}")
         #expect(throws: QueryDecodingError.missingRequiredColumn) {
             try PostgreSQL.Array<Int>(decoder: &decoder)
         }
     }
 
-    @Test func `bind as a table column`() {
-        let rendering = PostgreSQL().render(
+    @Test func `bind as a table column`() throws {
+        let rendering = try PostgreSQL().render(
             CoreFixtures.Post.insert { CoreFixtures.Post(id: 1, title: "Hello", tags: ["swift", "sql"]) }.query
         )
         #expect(rendering.values == [.int(1), .text("Hello"), .array([.text("swift"), .text("sql")], of: .text)])
@@ -183,7 +183,7 @@ enum CoreFixtures {
         #expect(value.queryOutput == CoreFixtures.Settings(theme: "light", isCompact: false))
     }
 
-    @Test func `reports malformed JSON as corrupted data`() {
+    @Test func `reports malformed JSON as corrupted data`() throws {
         var decoder = CoreFixtures.Text(text: "{")
         #expect(throws: QueryDecodingError.self) {
             try PostgreSQL.JSONB<CoreFixtures.Settings>(decoder: &decoder)
@@ -192,15 +192,15 @@ enum CoreFixtures {
 }
 
 @Suite struct `Isolation levels` {
-    @Test func `begin a transaction at their level`() {
-        #expect(PostgreSQL().render(PostgreSQL.Isolation.serializable.begin).sql == "BEGIN ISOLATION LEVEL SERIALIZABLE")
-        #expect(PostgreSQL().render(PostgreSQL.Isolation.readCommitted.begin).sql == "BEGIN ISOLATION LEVEL READ COMMITTED")
+    @Test func `begin a transaction at their level`() throws {
+        #expect(try PostgreSQL().render(PostgreSQL.Isolation.serializable.begin).sql == "BEGIN ISOLATION LEVEL SERIALIZABLE")
+        #expect(try PostgreSQL().render(PostgreSQL.Isolation.readCommitted.begin).sql == "BEGIN ISOLATION LEVEL READ COMMITTED")
     }
 }
 
 @Suite struct `Collations` {
-    @Test func `quote their names`() {
+    @Test func `quote their names`() throws {
         let fragment = CoreFixtures.Post.columns.title.collate(PostgreSQL.Collation.c).queryFragment
-        #expect(PostgreSQL().render(fragment).sql == #""posts"."title" COLLATE "C""#)
+        #expect(try PostgreSQL().render(fragment).sql == #""posts"."title" COLLATE "C""#)
     }
 }

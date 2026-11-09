@@ -9,8 +9,8 @@ import Testing
 import Time
 
 @Suite struct `Notification channels` {
-    @Test func `notify binds the channel and the payload`() {
-        let rendering = PostgreSQL().render(PostgreSQL.Notification.Channel("events").notify("hello").query)
+    @Test func `notify binds the channel and the payload`() throws {
+        let rendering = try PostgreSQL().render(PostgreSQL.Notification.Channel("events").notify("hello").query)
         #expect(
             rendering
                 == ISO_9075.Rendering(
@@ -20,30 +20,30 @@ import Time
         )
     }
 
-    @Test func `a JSON channel encodes its payload as text`() {
+    @Test func `a JSON channel encodes its payload as text`() throws {
         let channel = PostgreSQL.Notification.Channel<PostgreSQL.Notification.Change<TriggerFixtures.Order>>(json: "orders")
         let change = PostgreSQL.Notification.Change(
             operation: .insert,
             new: TriggerFixtures.Order(id: 1, status: "open", total: 2),
             old: nil
         )
-        let rendering = PostgreSQL().render(channel.notify(change).query)
+        let rendering = try PostgreSQL().render(channel.notify(change).query)
         #expect(rendering.values.last == .text(#"{"new":{"id":1,"status":"open","total":2},"operation":"INSERT"}"#))
     }
 
-    @Test func `listening quotes the channel`() {
+    @Test func `listening quotes the channel`() throws {
         let channel = PostgreSQL.Notification.Channel("Order Events")
-        #expect(PostgreSQL().render(channel.listen().query).sql == #"LISTEN "Order Events""#)
-        #expect(PostgreSQL().render(channel.unlisten().query).sql == #"UNLISTEN "Order Events""#)
-        #expect(PostgreSQL().render(PostgreSQL.Notification.unlistenAll().query).sql == "UNLISTEN *")
+        #expect(try PostgreSQL().render(channel.listen().query).sql == #"LISTEN "Order Events""#)
+        #expect(try PostgreSQL().render(channel.unlisten().query).sql == #"UNLISTEN "Order Events""#)
+        #expect(try PostgreSQL().render(PostgreSQL.Notification.unlistenAll().query).sql == "UNLISTEN *")
     }
 }
 
 @Suite struct `Notification triggers` {
     let channel = PostgreSQL.Notification.Channel<PostgreSQL.Notification.Change<TriggerFixtures.Order>>(json: "order_changes")
 
-    @Test func `setting up creates the function and replaces the trigger`() {
-        let statements = channel.setUp(on: TriggerFixtures.Order.self).map { PostgreSQL().render($0.query).sql }
+    @Test func `setting up creates the function and replaces the trigger`() throws {
+        let statements = try channel.setUp(on: TriggerFixtures.Order.self).map { try PostgreSQL().render($0.query).sql }
         #expect(statements.count == 3)
         #expect(statements[0].hasPrefix(#"CREATE OR REPLACE FUNCTION "orders_order_changes_notify"() RETURNS trigger"#))
         #expect(statements[0].contains("PERFORM pg_notify('order_changes', json_build_object('operation', TG_OP, 'new', CASE WHEN TG_OP <> 'DELETE' THEN row_to_json(NEW) END)::text);"))
@@ -54,14 +54,14 @@ import Time
         )
     }
 
-    @Test func `old rows are included on request`() {
-        let statements = channel.setUp(on: TriggerFixtures.Order.self, [.update], includingOld: true).map { PostgreSQL().render($0.query).sql }
+    @Test func `old rows are included on request`() throws {
+        let statements = try channel.setUp(on: TriggerFixtures.Order.self, [.update], includingOld: true).map { try PostgreSQL().render($0.query).sql }
         #expect(statements[0].contains("'old', CASE WHEN TG_OP <> 'INSERT' THEN row_to_json(OLD) END"))
         #expect(statements[2].contains("AFTER UPDATE ON"))
     }
 
-    @Test func `tearing down drops the trigger before the function`() {
-        let statements = channel.tearDown(on: TriggerFixtures.Order.self).map { PostgreSQL().render($0.query).sql }
+    @Test func `tearing down drops the trigger before the function`() throws {
+        let statements = try channel.tearDown(on: TriggerFixtures.Order.self).map { try PostgreSQL().render($0.query).sql }
         #expect(
             statements == [
                 #"DROP TRIGGER IF EXISTS "orders_order_changes_trigger" ON "orders""#,
@@ -112,7 +112,7 @@ import Time
         #expect(change.new == nil)
     }
 
-    @Test func `a payload without an operation is rejected`() {
+    @Test func `a payload without an operation is rejected`() throws {
         #expect(throws: ISO_9075.Error.self) {
             try channel.decode(#"{"new":null}"#)
         }
@@ -128,7 +128,7 @@ import Time
             isPublic: true,
             weight: nil
         )
-        let rendering = PostgreSQL().render(channel.notify(PostgreSQL.Notification.Change(operation: .insert, new: event, old: nil)).query)
+        let rendering = try PostgreSQL().render(channel.notify(PostgreSQL.Notification.Change(operation: .insert, new: event, old: nil)).query)
         #expect(rendering.sql.hasPrefix(#"SELECT pg_notify($1, json_build_object('operation', $2, 'new', (SELECT row_to_json("row") FROM (SELECT $3 AS "id""#))
         #expect(rendering.sql.hasSuffix(#") AS "row"), 'old', NULL)::text)"#))
         #expect(Array(rendering.values.prefix(4)) == [ISO_9075.Value.text("events"), .text("INSERT"), .int(3), .text("Sent")])

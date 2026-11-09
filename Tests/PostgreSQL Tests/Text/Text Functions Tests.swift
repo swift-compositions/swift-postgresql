@@ -8,25 +8,25 @@ import Testing
     let name = TextFixtures.Person.columns.name
     let nickname = TextFixtures.Person.columns.nickname
 
-    @Test func `initcap wraps the column`() {
-        #expect(PostgreSQL().render(name.initcap().queryFragment) == ISO_9075.Rendering(sql: #"initcap("people"."name")"#, values: []))
+    @Test func `initcap wraps the column`() throws {
+        #expect(try PostgreSQL().render(name.initcap().queryFragment) == ISO_9075.Rendering(sql: #"initcap("people"."name")"#, values: []))
     }
 
-    @Test func `initcap keeps an optional column optional`() {
+    @Test func `initcap keeps an optional column optional`() throws {
         let expression: some QueryExpression<String?> = nickname.initcap()
-        #expect(PostgreSQL().render(expression.queryFragment).sql == #"initcap("people"."nickname")"#)
+        #expect(try PostgreSQL().render(expression.queryFragment).sql == #"initcap("people"."nickname")"#)
     }
 
-    @Test func `char_length and bit_length`() {
-        #expect(PostgreSQL().render(name.charLength().queryFragment).sql == #"char_length("people"."name")"#)
-        #expect(PostgreSQL().render(name.bitLength().queryFragment).sql == #"bit_length("people"."name")"#)
+    @Test func `char_length and bit_length`() throws {
+        #expect(try PostgreSQL().render(name.charLength().queryFragment).sql == #"char_length("people"."name")"#)
+        #expect(try PostgreSQL().render(name.bitLength().queryFragment).sql == #"bit_length("people"."name")"#)
         let optional: some QueryExpression<Int?> = nickname.charLength()
-        #expect(PostgreSQL().render(optional.queryFragment).sql == #"char_length("people"."nickname")"#)
+        #expect(try PostgreSQL().render(optional.queryFragment).sql == #"char_length("people"."nickname")"#)
     }
 
-    @Test func `lpad inlines the length and binds the fill`() {
+    @Test func `lpad inlines the length and binds the fill`() throws {
         #expect(
-            PostgreSQL().render(name.lpad(to: 10, with: "*").queryFragment)
+            try PostgreSQL().render(name.lpad(to: 10, with: "*").queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"lpad("people"."name", 10, $1)"#,
                     values: [.text("*")]
@@ -34,9 +34,9 @@ import Testing
         )
     }
 
-    @Test func `rpad fills with a space by default`() {
+    @Test func `rpad fills with a space by default`() throws {
         #expect(
-            PostgreSQL().render(name.rpad(to: 5).queryFragment)
+            try PostgreSQL().render(name.rpad(to: 5).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"rpad("people"."name", 5, $1)"#,
                     values: [.text(" ")]
@@ -44,14 +44,14 @@ import Testing
         )
     }
 
-    @Test func `left and right inline the count`() {
-        #expect(PostgreSQL().render(name.left(3).queryFragment).sql == #"left("people"."name", 3)"#)
-        #expect(PostgreSQL().render(name.right(2).queryFragment).sql == #"right("people"."name", 2)"#)
+    @Test func `left and right inline the count`() throws {
+        #expect(try PostgreSQL().render(name.left(3).queryFragment).sql == #"left("people"."name", 3)"#)
+        #expect(try PostgreSQL().render(name.right(2).queryFragment).sql == #"right("people"."name", 2)"#)
     }
 
-    @Test func `split_part binds the delimiter`() {
+    @Test func `split_part binds the delimiter`() throws {
         #expect(
-            PostgreSQL().render(name.splitPart(delimiter: "-", field: 2).queryFragment)
+            try PostgreSQL().render(name.splitPart(delimiter: "-", field: 2).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"split_part("people"."name", $1, 2)"#,
                     values: [.text("-")]
@@ -59,9 +59,9 @@ import Testing
         )
     }
 
-    @Test func `position renders the IN form`() {
+    @Test func `position renders the IN form`() throws {
         #expect(
-            PostgreSQL().render(name.position(of: "an").queryFragment)
+            try PostgreSQL().render(name.position(of: "an").queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"position($1 IN "people"."name")"#,
                     values: [.text("an")]
@@ -69,9 +69,9 @@ import Testing
         )
     }
 
-    @Test func `starts_with binds the prefix`() {
+    @Test func `starts_with binds the prefix`() throws {
         #expect(
-            PostgreSQL().render(name.startsWith("Al").queryFragment)
+            try PostgreSQL().render(name.startsWith("Al").queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"starts_with("people"."name", $1)"#,
                     values: [.text("Al")]
@@ -79,9 +79,9 @@ import Testing
         )
     }
 
-    @Test func `translate binds both character sets`() {
+    @Test func `translate binds both character sets`() throws {
         #expect(
-            PostgreSQL().render(name.translate(from: "ab", to: "xy").queryFragment)
+            try PostgreSQL().render(name.translate(from: "ab", to: "xy").queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"translate("people"."name", $1, $2)"#,
                     values: [.text("ab"), .text("xy")]
@@ -89,40 +89,40 @@ import Testing
         )
     }
 
-    @Test func `overlay with and without a length`() {
+    @Test func `overlay with and without a length`() throws {
         #expect(
-            PostgreSQL().render(name.overlay(placing: "xx", from: 2, for: 3).queryFragment)
+            try PostgreSQL().render(name.overlay(placing: "xx", from: 2, for: 3).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"overlay("people"."name" PLACING $1 FROM 2 FOR 3)"#,
                     values: [.text("xx")]
                 )
         )
-        #expect(PostgreSQL().render(name.overlay(placing: "xx", from: 2).queryFragment).sql == #"overlay("people"."name" PLACING $1 FROM 2)"#)
+        #expect(try PostgreSQL().render(name.overlay(placing: "xx", from: 2).queryFragment).sql == #"overlay("people"."name" PLACING $1 FROM 2)"#)
     }
 
-    @Test func `reverse and repeat`() {
-        #expect(PostgreSQL().render(name.reversed().queryFragment).sql == #"reverse("people"."name")"#)
-        #expect(PostgreSQL().render(name.repeated(3).queryFragment).sql == #"repeat("people"."name", 3)"#)
+    @Test func `reverse and repeat`() throws {
+        #expect(try PostgreSQL().render(name.reversed().queryFragment).sql == #"reverse("people"."name")"#)
+        #expect(try PostgreSQL().render(name.repeated(3).queryFragment).sql == #"repeat("people"."name", 3)"#)
     }
 
-    @Test func `md5 and ascii`() {
-        #expect(PostgreSQL().render(name.md5().queryFragment).sql == #"md5("people"."name")"#)
-        #expect(PostgreSQL().render(name.ascii().queryFragment).sql == #"ascii("people"."name")"#)
+    @Test func `md5 and ascii`() throws {
+        #expect(try PostgreSQL().render(name.md5().queryFragment).sql == #"md5("people"."name")"#)
+        #expect(try PostgreSQL().render(name.ascii().queryFragment).sql == #"ascii("people"."name")"#)
     }
 
-    @Test func `quoting functions`() {
-        #expect(PostgreSQL().render(name.quoteLiteral().queryFragment).sql == #"quote_literal("people"."name")"#)
-        #expect(PostgreSQL().render(name.quoteIdent().queryFragment).sql == #"quote_ident("people"."name")"#)
-        #expect(PostgreSQL().render(nickname.quoteNullable().queryFragment).sql == #"quote_nullable("people"."nickname")"#)
+    @Test func `quoting functions`() throws {
+        #expect(try PostgreSQL().render(name.quoteLiteral().queryFragment).sql == #"quote_literal("people"."name")"#)
+        #expect(try PostgreSQL().render(name.quoteIdent().queryFragment).sql == #"quote_ident("people"."name")"#)
+        #expect(try PostgreSQL().render(nickname.quoteNullable().queryFragment).sql == #"quote_nullable("people"."nickname")"#)
     }
 
-    @Test func `chr inlines the code`() {
-        #expect(PostgreSQL().render(PostgreSQL.Text.chr(65).queryFragment) == ISO_9075.Rendering(sql: "chr(65)", values: []))
+    @Test func `chr inlines the code`() throws {
+        #expect(try PostgreSQL().render(PostgreSQL.Text.chr(65).queryFragment) == ISO_9075.Rendering(sql: "chr(65)", values: []))
     }
 
-    @Test func `concat_ws binds the separator and lists the values`() {
+    @Test func `concat_ws binds the separator and lists the values`() throws {
         #expect(
-            PostgreSQL().render(PostgreSQL.Text.concatenate(separator: ", ", name, nickname).queryFragment)
+            try PostgreSQL().render(PostgreSQL.Text.concatenate(separator: ", ", name, nickname).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"concat_ws($1, "people"."name", "people"."nickname")"#,
                     values: [.text(", ")]
@@ -130,9 +130,9 @@ import Testing
         )
     }
 
-    @Test func `format binds the template and lists the arguments`() {
+    @Test func `format binds the template and lists the arguments`() throws {
         #expect(
-            PostgreSQL().render(PostgreSQL.Text.format("Hello %s, %s", name, 42).queryFragment)
+            try PostgreSQL().render(PostgreSQL.Text.format("Hello %s, %s", name, 42).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"format($1, "people"."name", $2)"#,
                     values: [.text("Hello %s, %s"), .int(42)]

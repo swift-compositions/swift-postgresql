@@ -19,9 +19,9 @@ import Time
             (.doy, "DOY"),
         ] as [(PostgreSQL.DateTime.Field<Int>, String)]
     )
-    func `extract renders integer fields`(field: PostgreSQL.DateTime.Field<Int>, name: String) {
+    func `extract renders integer fields`(field: PostgreSQL.DateTime.Field<Int>, name: String) throws {
         #expect(
-            PostgreSQL().render(timestamp.extract(field).queryFragment)
+            try PostgreSQL().render(timestamp.extract(field).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"EXTRACT(\#(name) FROM "events"."timestamp")"#,
                     values: []
@@ -29,16 +29,16 @@ import Time
         )
     }
 
-    @Test func `extract types epoch and second as Double`() {
+    @Test func `extract types epoch and second as Double`() throws {
         let epoch: some QueryExpression<Double> = timestamp.extract(.epoch)
         let second: some QueryExpression<Double> = timestamp.extract(.second)
-        #expect(PostgreSQL().render(epoch.queryFragment).sql == #"EXTRACT(EPOCH FROM "events"."timestamp")"#)
-        #expect(PostgreSQL().render(second.queryFragment).sql == #"EXTRACT(SECOND FROM "events"."timestamp")"#)
+        #expect(try PostgreSQL().render(epoch.queryFragment).sql == #"EXTRACT(EPOCH FROM "events"."timestamp")"#)
+        #expect(try PostgreSQL().render(second.queryFragment).sql == #"EXTRACT(SECOND FROM "events"."timestamp")"#)
     }
 
-    @Test func `extract compares against a bound value`() {
+    @Test func `extract compares against a bound value`() throws {
         #expect(
-            PostgreSQL().render(timestamp.extract(.year).eq(2024).queryFragment)
+            try PostgreSQL().render(timestamp.extract(.year).eq(2024).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"(EXTRACT(YEAR FROM "events"."timestamp")) = ($1)"#,
                     values: [.int(2024)]
@@ -47,9 +47,9 @@ import Time
     }
 
     @Test(arguments: PostgreSQL.DateTime.Precision.allCases)
-    func `date_trunc inlines the precision`(precision: PostgreSQL.DateTime.Precision) {
+    func `date_trunc inlines the precision`(precision: PostgreSQL.DateTime.Precision) throws {
         #expect(
-            PostgreSQL().render(timestamp.dateTrunc(precision).queryFragment)
+            try PostgreSQL().render(timestamp.dateTrunc(precision).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"DATE_TRUNC('\#(precision.rawValue)', "events"."timestamp")"#,
                     values: []
@@ -57,13 +57,13 @@ import Time
         )
     }
 
-    @Test func `now renders the function call`() {
-        #expect(PostgreSQL().render(PostgreSQL.DateTime.now().queryFragment).sql == "now()")
-        #expect(PostgreSQL().render(PostgreSQL.DateTime.now().dateTrunc(.hour).queryFragment).sql == "DATE_TRUNC('hour', now())")
+    @Test func `now renders the function call`() throws {
+        #expect(try PostgreSQL().render(PostgreSQL.DateTime.now().queryFragment).sql == "now()")
+        #expect(try PostgreSQL().render(PostgreSQL.DateTime.now().dateTrunc(.hour).queryFragment).sql == "DATE_TRUNC('hour', now())")
     }
 
-    @Test func `extract filters a select`() {
-        let sql = PostgreSQL().render(DateTimeFixtures.Event.where { $0.timestamp.extract(.dow).eq(0) }.query).sql
+    @Test func `extract filters a select`() throws {
+        let sql = try PostgreSQL().render(DateTimeFixtures.Event.where { $0.timestamp.extract(.dow).eq(0) }.query).sql
         #expect(sql.contains(#"(EXTRACT(DOW FROM "events"."timestamp")) = ($1)"#))
     }
 }

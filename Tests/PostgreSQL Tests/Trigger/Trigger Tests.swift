@@ -5,8 +5,8 @@ import SQL_Macros
 import Testing
 
 @Suite struct `Trigger functions` {
-    @Test func `a function is created as a PL-pgSQL trigger function`() {
-        let rendering = PostgreSQL().render(PostgreSQL.Function("touch").create(body: "BEGIN RETURN NEW; END;").query)
+    @Test func `a function is created as a PL-pgSQL trigger function`() throws {
+        let rendering = try PostgreSQL().render(PostgreSQL.Function("touch").create(body: "BEGIN RETURN NEW; END;").query)
         #expect(
             rendering
                 == ISO_9075.Rendering(
@@ -16,8 +16,8 @@ import Testing
         )
     }
 
-    @Test func `a schema qualifies the function`() {
-        let rendering = PostgreSQL().render(PostgreSQL.Function("touch", schema: "audit").drop(ifExists: true, cascade: true).query)
+    @Test func `a schema qualifies the function`() throws {
+        let rendering = try PostgreSQL().render(PostgreSQL.Function("touch", schema: "audit").drop(ifExists: true, cascade: true).query)
         #expect(rendering.sql == #"DROP FUNCTION IF EXISTS "audit"."touch"() CASCADE"#)
     }
 }
@@ -25,15 +25,15 @@ import Testing
 @Suite struct `Triggers` {
     let touch = PostgreSQL.Function("touch")
 
-    @Test func `a trigger names its timing, events and function`() {
+    @Test func `a trigger names its timing, events and function`() throws {
         let trigger = PostgreSQL.Trigger<TriggerFixtures.Order>("orders_touch", .before, [.insert, .update], executing: touch)
         #expect(
-            PostgreSQL().render(trigger.create().query).sql
+            try PostgreSQL().render(trigger.create().query).sql
                 == #"CREATE TRIGGER "orders_touch" BEFORE INSERT OR UPDATE ON "orders" FOR EACH ROW EXECUTE FUNCTION "touch"()"#
         )
     }
 
-    @Test func `an update event names its columns`() {
+    @Test func `an update event names its columns`() throws {
         let trigger = PostgreSQL.Trigger<TriggerFixtures.Order>(
             "orders_status",
             .after,
@@ -42,13 +42,13 @@ import Testing
             executing: touch
         )
         #expect(
-            PostgreSQL().render(trigger.create(orReplace: true).query).sql
+            try PostgreSQL().render(trigger.create(orReplace: true).query).sql
                 == #"CREATE OR REPLACE TRIGGER "orders_status" AFTER UPDATE OF "status", "total" OR DELETE ON "orders" FOR EACH STATEMENT EXECUTE FUNCTION "touch"()"#
         )
     }
 
-    @Test func `a trigger drops from its table`() {
+    @Test func `a trigger drops from its table`() throws {
         let trigger = PostgreSQL.Trigger<TriggerFixtures.Order>("orders_touch", .after, [.truncate], level: .statement, executing: touch)
-        #expect(PostgreSQL().render(trigger.drop(ifExists: true).query).sql == #"DROP TRIGGER IF EXISTS "orders_touch" ON "orders""#)
+        #expect(try PostgreSQL().render(trigger.drop(ifExists: true).query).sql == #"DROP TRIGGER IF EXISTS "orders_touch" ON "orders""#)
     }
 }

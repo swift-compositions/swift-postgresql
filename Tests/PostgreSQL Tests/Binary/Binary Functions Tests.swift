@@ -5,9 +5,9 @@ import SQL_Macros
 import Testing
 
 @Suite struct `Binary string functions` {
-    @Test func `encode inlines the encoding`() {
+    @Test func `encode inlines the encoding`() throws {
         #expect(
-            PostgreSQL().render(BinaryFixtures.Attachment.columns.content.encode(.hex).queryFragment)
+            try PostgreSQL().render(BinaryFixtures.Attachment.columns.content.encode(.hex).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"encode("attachments"."content", 'hex')"#,
                     values: []
@@ -15,7 +15,7 @@ import Testing
         )
     }
 
-    @Test func `decode inlines the encoding`() {
-        #expect(PostgreSQL().render(BinaryFixtures.Attachment.columns.digest.decode(.base64).queryFragment).sql == #"decode("attachments"."digest", 'base64')"#)
+    @Test func `decode inlines the encoding`() throws {
+        #expect(try PostgreSQL().render(BinaryFixtures.Attachment.columns.digest.decode(.base64).queryFragment).sql == #"decode("attachments"."digest", 'base64')"#)
     }
 }

@@ -5,38 +5,38 @@ import SQL_Macros
 import Testing
 
 @Suite struct `Aggregate array_agg` {
-    @Test func `array_agg aggregates the expression`() {
-        let rendering = PostgreSQL().render(AggregateFixtures.Customer.columns.name.arrayAgg().queryFragment)
+    @Test func `array_agg aggregates the expression`() throws {
+        let rendering = try PostgreSQL().render(AggregateFixtures.Customer.columns.name.arrayAgg().queryFragment)
         #expect(rendering == ISO_9075.Rendering(sql: #"array_agg("customers"."name")"#, values: []))
     }
 
-    @Test func `distinct and order render inside the call`() {
+    @Test func `distinct and order render inside the call`() throws {
         let name = AggregateFixtures.Customer.columns.name
-        let rendering = PostgreSQL().render(name.arrayAgg(distinct: true, order: name.desc()).queryFragment)
+        let rendering = try PostgreSQL().render(name.arrayAgg(distinct: true, order: name.desc()).queryFragment)
         #expect(rendering.sql == #"array_agg(DISTINCT "customers"."name" ORDER BY "customers"."name" DESC)"#)
     }
 
-    @Test func `a filter renders after the call`() {
+    @Test func `a filter renders after the call`() throws {
         let columns = AggregateFixtures.Purchase.columns
-        let rendering = PostgreSQL().render(columns.customerID.arrayAgg(filter: columns.isPaid).queryFragment)
+        let rendering = try PostgreSQL().render(columns.customerID.arrayAgg(filter: columns.isPaid).queryFragment)
         #expect(rendering.sql == #"array_agg("purchases"."customerID") FILTER (WHERE "purchases"."isPaid")"#)
     }
 
-    @Test func `a table selects the aggregate`() {
-        let rendering = PostgreSQL().render(AggregateFixtures.Customer.arrayAgg { $0.name }.query)
+    @Test func `a table selects the aggregate`() throws {
+        let rendering = try PostgreSQL().render(AggregateFixtures.Customer.arrayAgg { $0.name }.query)
         #expect(rendering.sql == "SELECT array_agg(\"customers\".\"name\")\nFROM \"customers\"")
         #expect(rendering.values == [])
     }
 
-    @Test func `a table selects the filtered aggregate`() {
-        let rendering = PostgreSQL().render(
+    @Test func `a table selects the filtered aggregate`() throws {
+        let rendering = try PostgreSQL().render(
             AggregateFixtures.Purchase.arrayAgg(of: { $0.customerID }, filter: { $0.isPaid }).query
         )
         #expect(rendering.sql.hasPrefix(#"SELECT array_agg("purchases"."customerID") FILTER (WHERE "purchases"."isPaid")"#))
     }
 
-    @Test func `a where clause selects the aggregate`() {
-        let rendering = PostgreSQL().render(
+    @Test func `a where clause selects the aggregate`() throws {
+        let rendering = try PostgreSQL().render(
             AggregateFixtures.Purchase.where { $0.isPaid }.arrayAgg { $0.customerID }.query
         )
         #expect(rendering.sql.hasPrefix(#"SELECT array_agg("purchases"."customerID")"#))
@@ -46,24 +46,24 @@ import Testing
 }
 
 @Suite struct `Aggregate string_agg` {
-    @Test func `string_agg binds the separator`() {
-        let rendering = PostgreSQL().render(AggregateFixtures.Customer.columns.name.stringAgg(", ").queryFragment)
+    @Test func `string_agg binds the separator`() throws {
+        let rendering = try PostgreSQL().render(AggregateFixtures.Customer.columns.name.stringAgg(", ").queryFragment)
         #expect(rendering == ISO_9075.Rendering(sql: #"string_agg("customers"."name", $1)"#, values: [.text(", ")]))
     }
 
-    @Test func `the separator defaults to a comma`() {
-        let rendering = PostgreSQL().render(AggregateFixtures.Customer.columns.name.stringAgg().queryFragment)
+    @Test func `the separator defaults to a comma`() throws {
+        let rendering = try PostgreSQL().render(AggregateFixtures.Customer.columns.name.stringAgg().queryFragment)
         #expect(rendering.values == [.text(",")])
     }
 
-    @Test func `distinct and order render inside the call`() {
+    @Test func `distinct and order render inside the call`() throws {
         let name = AggregateFixtures.Customer.columns.name
-        let rendering = PostgreSQL().render(name.stringAgg(";", distinct: true, order: name.asc()).queryFragment)
+        let rendering = try PostgreSQL().render(name.stringAgg(";", distinct: true, order: name.asc()).queryFragment)
         #expect(rendering.sql == #"string_agg(DISTINCT "customers"."name", $1 ORDER BY "customers"."name" ASC)"#)
     }
 
-    @Test func `a non-text expression is cast to text`() {
-        let rendering = PostgreSQL().render(AggregateFixtures.Customer.columns.id.stringAgg().queryFragment)
+    @Test func `a non-text expression is cast to text`() throws {
+        let rendering = try PostgreSQL().render(AggregateFixtures.Customer.columns.id.stringAgg().queryFragment)
         #expect(
             rendering
                 == ISO_9075.Rendering(
@@ -75,41 +75,41 @@ import Testing
 }
 
 @Suite struct `Aggregate statistics` {
-    @Test func `each statistic renders its function`() {
+    @Test func `each statistic renders its function`() throws {
         let amount = AggregateFixtures.Purchase.columns.amount
-        #expect(PostgreSQL().render(amount.stddev().queryFragment).sql == #"stddev("purchases"."amount")"#)
-        #expect(PostgreSQL().render(amount.stddevPop().queryFragment).sql == #"stddev_pop("purchases"."amount")"#)
-        #expect(PostgreSQL().render(amount.stddevSamp().queryFragment).sql == #"stddev_samp("purchases"."amount")"#)
-        #expect(PostgreSQL().render(amount.variance().queryFragment).sql == #"variance("purchases"."amount")"#)
-        #expect(PostgreSQL().render(amount.varPop().queryFragment).sql == #"var_pop("purchases"."amount")"#)
-        #expect(PostgreSQL().render(amount.varSamp().queryFragment).sql == #"var_samp("purchases"."amount")"#)
+        #expect(try PostgreSQL().render(amount.stddev().queryFragment).sql == #"stddev("purchases"."amount")"#)
+        #expect(try PostgreSQL().render(amount.stddevPop().queryFragment).sql == #"stddev_pop("purchases"."amount")"#)
+        #expect(try PostgreSQL().render(amount.stddevSamp().queryFragment).sql == #"stddev_samp("purchases"."amount")"#)
+        #expect(try PostgreSQL().render(amount.variance().queryFragment).sql == #"variance("purchases"."amount")"#)
+        #expect(try PostgreSQL().render(amount.varPop().queryFragment).sql == #"var_pop("purchases"."amount")"#)
+        #expect(try PostgreSQL().render(amount.varSamp().queryFragment).sql == #"var_samp("purchases"."amount")"#)
     }
 
-    @Test func `an optional numeric column aggregates`() {
-        let rendering = PostgreSQL().render(AggregateFixtures.Purchase.columns.discount.stddev().queryFragment)
+    @Test func `an optional numeric column aggregates`() throws {
+        let rendering = try PostgreSQL().render(AggregateFixtures.Purchase.columns.discount.stddev().queryFragment)
         #expect(rendering.sql == #"stddev("purchases"."discount")"#)
     }
 
-    @Test func `a filter renders after the call`() {
+    @Test func `a filter renders after the call`() throws {
         let columns = AggregateFixtures.Purchase.columns
-        let rendering = PostgreSQL().render(columns.amount.variance(filter: columns.isPaid).queryFragment)
+        let rendering = try PostgreSQL().render(columns.amount.variance(filter: columns.isPaid).queryFragment)
         #expect(rendering.sql == #"variance("purchases"."amount") FILTER (WHERE "purchases"."isPaid")"#)
     }
 
-    @Test func `a table selects the statistic`() {
-        let rendering = PostgreSQL().render(AggregateFixtures.Purchase.stddev { $0.amount }.query)
+    @Test func `a table selects the statistic`() throws {
+        let rendering = try PostgreSQL().render(AggregateFixtures.Purchase.stddev { $0.amount }.query)
         #expect(rendering.sql == "SELECT stddev(\"purchases\".\"amount\")\nFROM \"purchases\"")
     }
 
-    @Test func `a table selects the filtered statistic`() {
-        let rendering = PostgreSQL().render(
+    @Test func `a table selects the filtered statistic`() throws {
+        let rendering = try PostgreSQL().render(
             AggregateFixtures.Purchase.variance(of: { $0.amount }, filter: { $0.isPaid }).query
         )
         #expect(rendering.sql.hasPrefix(#"SELECT variance("purchases"."amount") FILTER (WHERE "purchases"."isPaid")"#))
     }
 
-    @Test func `a where clause selects the statistic`() {
-        let rendering = PostgreSQL().render(
+    @Test func `a where clause selects the statistic`() throws {
+        let rendering = try PostgreSQL().render(
             AggregateFixtures.Purchase.where { $0.isPaid }.stddev(of: { $0.amount }, filter: { $0.isPaid }).query
         )
         #expect(rendering.sql.hasPrefix(#"SELECT stddev("purchases"."amount") FILTER (WHERE "purchases"."isPaid")"#))
@@ -120,8 +120,8 @@ import Testing
 @Suite struct `Aggregate ordered sets` {
     let purchase = AggregateFixtures.Purchase.columns
 
-    @Test func `a continuous percentile binds its fraction and orders within the group`() {
-        let rendering = PostgreSQL().render(purchase.amount.percentileCont(0.5).queryFragment)
+    @Test func `a continuous percentile binds its fraction and orders within the group`() throws {
+        let rendering = try PostgreSQL().render(purchase.amount.percentileCont(0.5).queryFragment)
         #expect(
             rendering
                 == ISO_9075.Rendering(
@@ -131,13 +131,13 @@ import Testing
         )
     }
 
-    @Test func `a discrete percentile keeps the value type`() {
-        let rendering = PostgreSQL().render(purchase.customerID.percentileDisc(0.9, filter: purchase.isPaid).queryFragment)
+    @Test func `a discrete percentile keeps the value type`() throws {
+        let rendering = try PostgreSQL().render(purchase.customerID.percentileDisc(0.9, filter: purchase.isPaid).queryFragment)
         #expect(rendering.sql == #"percentile_disc($1) WITHIN GROUP (ORDER BY "purchases"."customerID") FILTER (WHERE "purchases"."isPaid")"#)
     }
 
-    @Test func `mode takes no arguments`() {
-        let rendering = PostgreSQL().render(purchase.customerID.mode().queryFragment)
+    @Test func `mode takes no arguments`() throws {
+        let rendering = try PostgreSQL().render(purchase.customerID.mode().queryFragment)
         #expect(rendering.sql == #"mode() WITHIN GROUP (ORDER BY "purchases"."customerID")"#)
     }
 }
@@ -145,22 +145,22 @@ import Testing
 @Suite struct `Aggregate booleans and correlations` {
     let purchase = AggregateFixtures.Purchase.columns
 
-    @Test func `boolean aggregates render their names`() {
-        #expect(PostgreSQL().render(purchase.isPaid.boolAnd().queryFragment).sql == #"bool_and("purchases"."isPaid")"#)
-        #expect(PostgreSQL().render(purchase.isPaid.boolOr().queryFragment).sql == #"bool_or("purchases"."isPaid")"#)
+    @Test func `boolean aggregates render their names`() throws {
+        #expect(try PostgreSQL().render(purchase.isPaid.boolAnd().queryFragment).sql == #"bool_and("purchases"."isPaid")"#)
+        #expect(try PostgreSQL().render(purchase.isPaid.boolOr().queryFragment).sql == #"bool_or("purchases"."isPaid")"#)
     }
 
-    @Test func `two-variable statistics take both expressions`() {
+    @Test func `two-variable statistics take both expressions`() throws {
         #expect(
-            PostgreSQL().render(purchase.amount.corr(purchase.discount).queryFragment).sql
+            try PostgreSQL().render(purchase.amount.corr(purchase.discount).queryFragment).sql
                 == #"corr("purchases"."amount", "purchases"."discount")"#
         )
         #expect(
-            PostgreSQL().render(purchase.amount.covarSamp(purchase.customerID).queryFragment).sql
+            try PostgreSQL().render(purchase.amount.covarSamp(purchase.customerID).queryFragment).sql
                 == #"covar_samp("purchases"."amount", "purchases"."customerID")"#
         )
         #expect(
-            PostgreSQL().render(purchase.amount.regrSlope(purchase.discount).queryFragment).sql
+            try PostgreSQL().render(purchase.amount.regrSlope(purchase.discount).queryFragment).sql
                 == #"regr_slope("purchases"."amount", "purchases"."discount")"#
         )
     }

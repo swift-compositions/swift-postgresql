@@ -35,7 +35,7 @@
             #expect(configuration.password == nil)
         }
 
-        @Test func `names a missing variable`() {
+        @Test func `names a missing variable`() throws {
             #expect(throws: PostgreSQL.Configuration.Error.missing(variable: "DATABASE_HOST or POSTGRES_HOST")) {
                 try PostgreSQL.Configuration(
                     environment: ["DATABASE_PORT": "5432", "DATABASE_NAME": "db", "DATABASE_USER": "user"],
@@ -44,7 +44,7 @@
             }
         }
 
-        @Test func `rejects a port that is not a number`() {
+        @Test func `rejects a port that is not a number`() throws {
             #expect(throws: PostgreSQL.Configuration.Error.invalidPort("five")) {
                 try PostgreSQL.Configuration(
                     environment: ["DATABASE_HOST": "h", "DATABASE_PORT": "five", "DATABASE_NAME": "db", "DATABASE_USER": "user"],
@@ -82,7 +82,7 @@
 
     @Suite struct `Queries from renderings` {
         @Test func `carry the SQL and one binding per value`() throws {
-            let rendering = PostgreSQL().render(
+            let rendering = try PostgreSQL().render(
                 "SELECT * FROM users WHERE id = \(ISO_9075.Value.int(42)) AND name = \(ISO_9075.Value.text("Alice"))"
             )
             let query = try PostgresQuery(rendering)
@@ -91,19 +91,19 @@
         }
 
         @Test func `bind nulls and blobs`() throws {
-            let rendering = PostgreSQL().render(
+            let rendering = try PostgreSQL().render(
                 "UPDATE files SET content = \(ISO_9075.Value.blob([1, 2, 3].map(Byte.init(bitPattern:)))), owner = \(ISO_9075.Value.null)"
             )
             #expect(try PostgresQuery(rendering).binds.count == 2)
         }
 
         @Test func `bind a homogeneous array`() throws {
-            let rendering = PostgreSQL().render("SELECT \(ISO_9075.Value.array([.int(1), .int(2)], of: .int))")
+            let rendering = try PostgreSQL().render("SELECT \(ISO_9075.Value.array([.int(1), .int(2)], of: .int))")
             #expect(try PostgresQuery(rendering).binds.count == 1)
         }
 
-        @Test func `reject a heterogeneous array with a typed error`() {
-            let rendering = PostgreSQL().render("SELECT \(ISO_9075.Value.array([.int(1), .text("a")], of: .int))")
+        @Test func `reject a heterogeneous array with a typed error`() throws {
+            let rendering = try PostgreSQL().render("SELECT \(ISO_9075.Value.array([.int(1), .text("a")], of: .int))")
             #expect(throws: ISO_9075.Error.self) {
                 try PostgresQuery(rendering)
             }
@@ -111,14 +111,16 @@
 
         @Test func `reject an invalid value with its failure`() {
             let failure = ISO_9075.Value.Failure("not encodable")
-            let rendering = PostgreSQL().render("SELECT \(ISO_9075.Value.invalid(failure))")
+            #expect(throws: failure) {
+                try PostgreSQL().render("SELECT \(ISO_9075.Value.invalid(failure))")
+            }
             #expect(throws: ISO_9075.Error.binding(failure)) {
-                try PostgresQuery(rendering)
+                try PostgresQuery(ISO_9075.Rendering(sql: "SELECT $1", values: [.invalid(failure)]))
             }
         }
 
-        @Test func `reject a decimal that is not a number`() {
-            let rendering = PostgreSQL().render("SELECT \(ISO_9075.Value.decimal("1,5"))")
+        @Test func `reject a decimal that is not a number`() throws {
+            let rendering = try PostgreSQL().render("SELECT \(ISO_9075.Value.decimal("1,5"))")
             #expect(throws: ISO_9075.Error.self) {
                 try PostgresQuery(rendering)
             }

@@ -6,9 +6,9 @@ import SQL_Macros
 import Testing
 
 @Suite struct `JSONB functions` {
-    @Test func `set binds path and document`() {
+    @Test func `set binds path and document`() throws {
         let fragment = JSONBFixtures.User.columns.settings.setting(["theme"], to: "dark").queryFragment
-        #expect(PostgreSQL().render(fragment).sql == #"jsonb_set("users"."settings", $1::text[], $2::jsonb, $3)"#)
+        #expect(try PostgreSQL().render(fragment).sql == #"jsonb_set("users"."settings", $1::text[], $2::jsonb, $3)"#)
         #expect(fragment.debugDescription == #"jsonb_set("users"."settings", ARRAY['theme']::text[], '"dark"'::jsonb, TRUE)"#)
     }
 
@@ -21,45 +21,45 @@ import Testing
         )
     }
 
-    @Test func `insert binds path, document and position`() {
+    @Test func `insert binds path, document and position`() throws {
         let fragment = JSONBFixtures.User.columns.settings.inserting("dark", at: JSONBFixtures.reservedPath, after: true)
             .queryFragment
-        #expect(PostgreSQL().render(fragment).sql == #"jsonb_insert("users"."settings", $1::text[], $2::jsonb, $3)"#)
+        #expect(try PostgreSQL().render(fragment).sql == #"jsonb_insert("users"."settings", $1::text[], $2::jsonb, $3)"#)
         #expect(
             fragment.debugDescription
                 == #"jsonb_insert("users"."settings", ARRAY['a,b', 'o''brien', '}']::text[], '"dark"'::jsonb, TRUE)"#
         )
     }
 
-    @Test func `processing functions`() {
+    @Test func `processing functions`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.strippingNulls().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.strippingNulls().queryFragment).sql
                 == #"jsonb_strip_nulls("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.prettyFormatted().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.prettyFormatted().queryFragment).sql
                 == #"jsonb_pretty("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.metadata.typeString().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.metadata.typeString().queryFragment).sql
                 == #"jsonb_typeof("users"."metadata")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayLength().gt(5).queryFragment)
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayLength().gt(5).queryFragment)
                 == ISO_9075.Rendering(sql: #"(jsonb_array_length("users"."settings")) > ($1)"#, values: [.int(5)])
         )
     }
 
-    @Test func `path extraction functions bind a variadic text array`() {
+    @Test func `path extraction functions bind a variadic text array`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.extractPath(["a", "b"]).queryFragment)
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.extractPath(["a", "b"]).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"jsonb_extract_path("users"."settings", VARIADIC $1::text[])"#,
                     values: [.array([.text("a"), .text("b")], of: .text)]
                 )
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.extractPathText(["a"], format: .json).queryFragment)
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.extractPathText(["a"], format: .json).queryFragment)
                 == ISO_9075.Rendering(
                     sql: #"json_extract_path_text("users"."settings", VARIADIC $1::text[])"#,
                     values: [.array([.text("a")], of: .text)]
@@ -67,80 +67,80 @@ import Testing
         )
     }
 
-    @Test func `jsonpath functions cast the bound path`() {
+    @Test func `jsonpath functions cast the bound path`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.pathExists("$.theme").queryFragment)
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.pathExists("$.theme").queryFragment)
                 == ISO_9075.Rendering(sql: #"jsonb_path_exists("users"."settings", $1::jsonpath)"#, values: [.text("$.theme")])
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.pathQuery("$.items[*]").queryFragment)
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.pathQuery("$.items[*]").queryFragment)
                 == ISO_9075.Rendering(sql: #"jsonb_path_query("users"."settings", $1::jsonpath)"#, values: [.text("$.items[*]")])
         )
     }
 
-    @Test func `set-returning functions`() {
+    @Test func `set-returning functions`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElements().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElements().queryFragment).sql
                 == #"jsonb_array_elements("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElements(format: .json).queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElements(format: .json).queryFragment).sql
                 == #"json_array_elements("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElementsText().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElementsText().queryFragment).sql
                 == #"jsonb_array_elements_text("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElementsText(format: .json).queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayElementsText(format: .json).queryFragment).sql
                 == #"json_array_elements_text("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.each().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.each().queryFragment).sql
                 == #"jsonb_each("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.eachText().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.eachText().queryFragment).sql
                 == #"jsonb_each_text("users"."settings")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.settings.objectKeys().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.settings.objectKeys().queryFragment).sql
                 == #"jsonb_object_keys("users"."settings")"#
         )
     }
 
-    @Test func `conversion functions`() {
+    @Test func `conversion functions`() throws {
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.id.toJsonb().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.id.toJsonb().queryFragment).sql
                 == #"to_jsonb("users"."id")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.name.toJson().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.name.toJson().queryFragment).sql
                 == #"to_json("users"."name")"#
         )
         #expect(
-            PostgreSQL().render(JSONBFixtures.User.columns.tags.arrayToJson().queryFragment).sql
+            try PostgreSQL().render(JSONBFixtures.User.columns.tags.arrayToJson().queryFragment).sql
                 == #"array_to_json("users"."tags")"#
         )
     }
 
-    @Test func `build array renders its arguments in order`() {
+    @Test func `build array renders its arguments in order`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 PostgreSQL.JSON.buildArray(JSONBFixtures.User.columns.name, JSONBFixtures.User.columns.id).queryFragment
             ).sql == #"jsonb_build_array("users"."name", "users"."id")"#
         )
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 PostgreSQL.JSON.buildArray(JSONBFixtures.User.columns.name, format: .json).queryFragment
             ).sql == #"json_build_array("users"."name")"#
         )
-        #expect(PostgreSQL().render(PostgreSQL.JSON.buildArray().queryFragment).sql == "jsonb_build_array()")
+        #expect(try PostgreSQL().render(PostgreSQL.JSON.buildArray().queryFragment).sql == "jsonb_build_array()")
     }
 
-    @Test func `build arrays nest`() {
+    @Test func `build arrays nest`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 PostgreSQL.JSON.buildArray(
                     JSONBFixtures.User.columns.name,
                     PostgreSQL.JSON.buildArray(JSONBFixtures.User.columns.id, JSONBFixtures.User.columns.name.toJsonb())
@@ -149,9 +149,9 @@ import Testing
         )
     }
 
-    @Test func `build object binds its keys`() {
+    @Test func `build object binds its keys`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 PostgreSQL.JSON.buildObject(("name", JSONBFixtures.User.columns.name), ("id", JSONBFixtures.User.columns.id))
                     .queryFragment
             )
@@ -161,15 +161,15 @@ import Testing
                 )
         )
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 PostgreSQL.JSON.buildObject(("name", JSONBFixtures.User.columns.name), format: .json).queryFragment
             ).sql == #"json_build_object($1, "users"."name")"#
         )
     }
 
-    @Test func `object binds keys and values as text arrays`() {
+    @Test func `object binds keys and values as text arrays`() throws {
         #expect(
-            PostgreSQL().render(
+            try PostgreSQL().render(
                 PostgreSQL.JSON.object(keys: ["name", "email"], values: ["Alice", "alice@example.com"], format: .json)
                     .queryFragment
             )
@@ -187,9 +187,9 @@ import Testing
         )
     }
 
-    @Test func `row renders the table row`() {
+    @Test func `row renders the table row`() throws {
         #expect(
-            PostgreSQL().render(PostgreSQL.JSON.row(JSONBFixtures.User.self).queryFragment).sql
+            try PostgreSQL().render(PostgreSQL.JSON.row(JSONBFixtures.User.self).queryFragment).sql
                 == #"row_to_json("users".*)"#
         )
     }

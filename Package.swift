@@ -21,7 +21,7 @@ let package = Package(
         .trait(name: "Tagged", description: "PostgreSQL conformances for swift-atoms Tagged"),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.6.0"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.17.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.81.0"),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.29.0"),
         .package(url: "https://github.com/pointfreeco/swift-custom-dump.git", from: "1.3.3"),

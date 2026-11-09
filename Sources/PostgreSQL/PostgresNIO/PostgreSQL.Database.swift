@@ -27,7 +27,11 @@ public import PostgreSQL_SQL
             ///
             /// - Throws: ``PostgreSQL/Error/Kind/tls`` when a root certificate can't be read.
             public init(configuration: PostgreSQL.Configuration) throws(PostgreSQL.Error) {
-                self.engine = Engine(configuration: configuration, client: try configuration.client())
+                self.engine = Engine(
+                configuration: configuration,
+                client: try configuration.client(),
+                probe: try configuration.connection()
+            )
             }
 
             /// The configuration the database was made with.
@@ -50,10 +54,19 @@ public import PostgreSQL_SQL
             let logger: Logger
             let runner: Task<Void, Never>
             let closed = Atomic<Bool>(false)
+            let attempts: Attempts
+            let probe: PostgresConnection.Configuration
 
-            init(configuration: PostgreSQL.Configuration, client: PostgresClient.Configuration) {
-                let logger = Logger(label: "PostgreSQL", factory: { _ in SwiftLogNoOpLogHandler() })
+            init(
+                configuration: PostgreSQL.Configuration,
+                client: PostgresClient.Configuration,
+                probe: PostgresConnection.Configuration
+            ) {
+                let attempts = Attempts()
+                let logger = Logger(label: "PostgreSQL", factory: { _ in Listener(attempts: attempts) })
                 let client = PostgresClient(configuration: client, backgroundLogger: logger)
+                self.attempts = attempts
+                self.probe = probe
                 self.configuration = configuration
                 self.client = client
                 self.logger = logger
@@ -291,6 +304,17 @@ public import PostgreSQL_SQL
                     }
                     return try outcome.get()
                 }
+                let failures = attempts.failures
+                group.addTask {
+                    var seen = failures
+                    while true {
+                        await self.attempts.failure(after: seen)
+                        try Task.checkCancellation()
+                        seen = self.attempts.failures
+                        if acquired.load(ordering: .acquiring) { return nil }
+                        if let failure = await self.connectFailure() { throw failure }
+                    }
+                }
                 group.addTask {
                     try await Task.sleep(for: timeout)
                     guard acquired.load(ordering: .acquiring) else {
@@ -303,6 +327,19 @@ public import PostgreSQL_SQL
                     if let value = next { return value }
                 }
                 throw PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled")
+            }
+        }
+    }
+
+    extension PostgreSQL.Database.Engine {
+        /// Why a connection can't be opened right now, found by opening one outside the pool; `nil` when it opens.
+        func connectFailure() async -> PostgreSQL.Error? {
+            do {
+                let connection = try await PostgresConnection.connect(configuration: probe, id: 0, logger: logger)
+                try? await connection.close()
+                return nil
+            } catch {
+                return PostgreSQL.Error.translated(error)
             }
         }
     }

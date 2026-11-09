@@ -16,11 +16,24 @@ extension PostgreSQL {
             schema.map { schema -> ISO_9075.Fragment in "\(quote: schema).\(quote: name)" } ?? "\(quote: name)"
         }
 
+        /// `CREATE FUNCTION … RETURNS trigger LANGUAGE plpgsql` with `body` dollar-quoted, under `$function$` or, when
+        /// the body contains that, the first of `$function_1$`, `$function_2$`, … it doesn't contain.
         public func create(orReplace: Bool = true, body: String) -> SQLQueryExpression<()> {
-            precondition(!body.contains("$function$"), "a trigger function body must not contain $function$")
+            let tag = Self.tag(for: body)
             return SQLQueryExpression(
-                "CREATE \(raw: orReplace ? "OR REPLACE " : "")FUNCTION \(reference)() RETURNS trigger LANGUAGE plpgsql AS $function$\n\(raw: body)\n$function$"
+                "CREATE \(raw: orReplace ? "OR REPLACE " : "")FUNCTION \(reference)() RETURNS trigger LANGUAGE plpgsql AS \(raw: tag)\n\(raw: body)\n\(raw: tag)"
             )
+        }
+
+        /// A dollar-quote tag that `body` does not contain, so the body can't end the quote early.
+        static func tag(for body: String) -> String {
+            var tag = "$function$"
+            var number = 0
+            while body.contains(tag) {
+                number += 1
+                tag = "$function_\(number)$"
+            }
+            return tag
         }
 
         public func drop(ifExists: Bool = false, cascade: Bool = false) -> SQLQueryExpression<()> {

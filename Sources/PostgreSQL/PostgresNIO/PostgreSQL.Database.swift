@@ -225,13 +225,15 @@ public import PostgreSQL_SQL
             end: ISO_9075.Fragment?,
             _ body: @Sendable (PostgreSQL.Connection) throws -> T
         ) async throws -> T {
-            try await leased { connection in
+            try await leased { connection, cancellation in
                 guard let begin, let end else { return try body(connection) }
                 try connection.run(begin)
                 let value: T
                 do {
                     value = try body(connection)
-                    if Task.isCancelled { throw PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled") }
+                    if cancellation.isCancelled {
+                        throw PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled: rolled back")
+                    }
                 } catch {
                     do {
                         try connection.run("ROLLBACK")
@@ -248,34 +250,51 @@ public import PostgreSQL_SQL
             }
         }
 
-        /// Runs `body` on a leased connection, on one of the database's threads.
-        private func leased<T: Sendable>(_ body: @Sendable (PostgreSQL.Connection) throws -> T) async throws -> T {
+        /// Runs `body` on a leased connection, on one of the database's threads, telling it whether the calling task
+        /// has been cancelled meanwhile: a thread of the pool runs in no task, so it can't ask itself.
+        private func leased<T: Sendable>(
+            _ body: @Sendable (PostgreSQL.Connection, Cancellation) throws -> T
+        ) async throws -> T {
             guard !engine.closed.load(ordering: .acquiring) else {
                 throw PostgreSQL.Error(kind: .closed, message: "the database is closed")
             }
             try Task.checkCancellation()
             let engine = engine
+            let cancellation = Cancellation()
             return try await withoutActuallyEscaping(body) { body in
                 let handoff = Handoff(body)
                 defer { handoff.clear() }
-                return try await engine.withConnection { postgres in
-                    let connection = PostgreSQL.Connection(postgres, logger: engine.logger)
-                    let result: Result<T, any Swift.Error> = try await engine.threads.runIfActive {
-                        guard let body = handoff.take() else {
-                            return .failure(PostgreSQL.Error(kind: .cancelled, message: "the work was abandoned"))
+                return try await withTaskCancellationHandler {
+                    try await engine.withConnection { postgres in
+                        let connection = PostgreSQL.Connection(postgres, logger: engine.logger)
+                        let result: Result<T, any Swift.Error> = try await engine.threads.runIfActive {
+                            guard let body = handoff.take() else {
+                                return .failure(PostgreSQL.Error(kind: .cancelled, message: "the work was abandoned"))
+                            }
+                            do {
+                                return .success(try body(connection, cancellation))
+                            } catch let error as ISO_9075.Error {
+                                return .failure(connection.failures.original(of: error) ?? error)
+                            } catch {
+                                return .failure(error)
+                            }
                         }
-                        do {
-                            return .success(try body(connection))
-                        } catch let error as ISO_9075.Error {
-                            return .failure(connection.failures.original(of: error) ?? error)
-                        } catch {
-                            return .failure(error)
-                        }
+                        return try result.get()
                     }
-                    return try result.get()
+                } onCancel: {
+                    cancellation.cancel()
                 }
             }
         }
+    }
+
+    /// Whether the task that leased a connection has been cancelled, for the thread that runs its closure.
+    final class Cancellation: Sendable {
+        private let cancelled = Atomic<Bool>(false)
+
+        var isCancelled: Bool { cancelled.load(ordering: .acquiring) }
+
+        func cancel() { cancelled.store(true, ordering: .releasing) }
     }
 
     extension PostgreSQL.Database.Engine {
@@ -309,14 +328,16 @@ public import PostgreSQL_SQL
                     var seen = failures
                     while true {
                         await self.attempts.failure(after: seen)
-                        try Task.checkCancellation()
+                        if Task.isCancelled { return nil }
                         seen = self.attempts.failures
                         if acquired.load(ordering: .acquiring) { return nil }
                         if let failure = await self.connectFailure() { throw failure }
                     }
                 }
                 group.addTask {
-                    try await Task.sleep(for: timeout)
+                    // Cancelled, the timer stands down: the call itself then ends as cancelled, or with its result if
+                    // it already holds a connection.
+                    do { try await Task.sleep(for: timeout) } catch { return nil }
                     guard acquired.load(ordering: .acquiring) else {
                         throw PostgreSQL.Error(kind: .timeout, message: "no connection came free in \(timeout)")
                     }

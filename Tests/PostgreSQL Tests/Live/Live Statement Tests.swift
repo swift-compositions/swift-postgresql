@@ -25,6 +25,17 @@
             #expect(remaining == 0)
         }
 
+        @Test func `a trigger function whose body contains $function$ is created as written`() async throws {
+            let body = "BEGIN RAISE NOTICE '$function$'; RETURN NEW; END;"
+            let source = try await database.write { connection throws(ISO_9075.Error) in
+                try PostgreSQL.Function("quoted").create(body: body).execute(connection)
+                return try connection.fetchAll("SELECT prosrc FROM pg_proc WHERE proname = 'quoted'") {
+                    row throws(ISO_9075.Error) -> ISO_9075.Value in try row.value(at: 0)
+                }
+            }
+            #expect(source == [.text("\n\(body)\n")])
+        }
+
         @Test func `an upsert updates the conflicting row`() async throws {
             let accounts = try await database.write { connection throws(ISO_9075.Error) in
                 try Account.insert { Account(id: 2, owner: "bob", balance: 1) }.execute(connection)

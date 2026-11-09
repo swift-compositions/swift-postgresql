@@ -16,6 +16,15 @@ import Testing
         )
     }
 
+    @Test func `a body containing the usual tag is quoted under one it doesn't contain`() throws {
+        let body = "BEGIN RAISE NOTICE '$function$ and $function_1$'; RETURN NEW; END;"
+        let rendering = try PostgreSQL().render(PostgreSQL.Function("touch").create(body: body).query)
+        #expect(
+            rendering.sql
+                == "CREATE OR REPLACE FUNCTION \"touch\"() RETURNS trigger LANGUAGE plpgsql AS $function_2$\n\(body)\n$function_2$"
+        )
+    }
+
     @Test func `a schema qualifies the function`() throws {
         let rendering = try PostgreSQL().render(PostgreSQL.Function("touch", schema: "audit").drop(ifExists: true, cascade: true).query)
         #expect(rendering.sql == #"DROP FUNCTION IF EXISTS "audit"."touch"() CASCADE"#)

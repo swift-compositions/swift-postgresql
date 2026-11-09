@@ -1,22 +1,34 @@
-#if PostgresNIO
-    internal import Foundation
-    public import PostgreSQL
-    internal import PostgresNIO
+public import PostgreSQL
+internal import Foundation
 
-    extension PostgreSQL.Configuration {
-        public static var test: Self {
-            test(environment: ProcessInfo.processInfo.environment)
-        }
-
-        public static func test(environment: [String: String]) -> Self {
-            Self(
-                host: environment["POSTGRES_HOST"] ?? "localhost",
-                port: environment["POSTGRES_PORT"].flatMap(Int.init) ?? 5432,
-                username: environment["POSTGRES_USER"] ?? "coen",
-                password: environment["POSTGRES_PASSWORD"],
-                database: environment["POSTGRES_DB"] ?? "swift_postgresql_test",
-                tls: .disable
-            )
-        }
+extension PostgreSQL.Configuration {
+    /// The configuration the test suites connect with: ``test(environment:)`` of the process environment.
+    public static var test: Self {
+        test(environment: ProcessInfo.processInfo.environment)
     }
-#endif
+
+    /// `POSTGRES_HOST` (default `localhost`), `POSTGRES_PORT` (5432), `POSTGRES_USER` (`coen`), `POSTGRES_PASSWORD`,
+    /// `POSTGRES_DB` (`swift_postgresql_test`), and TLS from `POSTGRES_SSLMODE` (`disable`, `require`,
+    /// `verify-full`; default `disable`) with extra roots from `POSTGRES_SSLROOTCERT`. A value that can't be read
+    /// stops the test run.
+    public static func test(environment: [String: String]) -> Self {
+        var tls = TLS.disabled
+        switch environment["POSTGRES_SSLMODE"] {
+        case nil, "disable": break
+        case "require": tls = .required
+        case "verify-full": tls = .verified
+        case let mode?: preconditionFailure("POSTGRES_SSLMODE \(mode) is none of disable, require, verify-full")
+        }
+        if let file = environment["POSTGRES_SSLROOTCERT"] {
+            tls.rootCertificates = [.file(file)]
+        }
+        return Self(
+            host: environment["POSTGRES_HOST"] ?? "localhost",
+            port: environment["POSTGRES_PORT"].flatMap(Int.init) ?? 5432,
+            user: environment["POSTGRES_USER"] ?? "coen",
+            password: environment["POSTGRES_PASSWORD"],
+            database: environment["POSTGRES_DB"] ?? "swift_postgresql_test",
+            tls: tls
+        )
+    }
+}

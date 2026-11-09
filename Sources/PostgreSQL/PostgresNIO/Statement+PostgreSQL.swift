@@ -1,3 +1,4 @@
+public import PostgreSQL_SQL
 #if PostgresNIO
     public import ISO_9075_Call_Level_Interface
     public import SQL

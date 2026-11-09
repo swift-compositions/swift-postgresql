@@ -1,6 +1,7 @@
+public import PostgreSQL_SQL
 #if PostgresNIO
     public import ISO_9075_Call_Level_Interface
-    public import PostgresNIO
+    package import PostgresNIO
 
     extension PostgreSQL.Notification {
         public struct Stream<Payload>: AsyncSequence {
@@ -52,7 +53,7 @@
         ) async throws(ISO_9075.Error) -> Value {
             let result: Result<Value, ISO_9075.Error>
             do {
-                result = try await client.withConnection { postgres in
+                result = try await engine.client.withConnection { postgres in
                     try await postgres.listen(on: channel.name) { notifications in
                         do throws(ISO_9075.Error) {
                             return .success(try await consume(PostgreSQL.Notification.Stream(notifications, channel: channel)))

@@ -12,6 +12,7 @@ let package = Package(
         .visionOS(.v27),
     ],
     products: [
+        .library(name: "PostgreSQL SQL", targets: ["PostgreSQL SQL"]),
         .library(name: "PostgreSQL", targets: ["PostgreSQL"]),
         .library(name: "PostgreSQL Test Support", targets: ["PostgreSQL Test Support"]),
     ],
@@ -22,6 +23,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.81.0"),
+        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.29.0"),
         .package(url: "https://github.com/pointfreeco/swift-custom-dump.git", from: "1.3.3"),
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.18.4"),
         .package(
@@ -37,9 +39,26 @@ let package = Package(
         .package(url: "https://github.com/vapor/postgres-nio.git", from: "1.33.0"),
     ],
     targets: [
+        // PostgreSQL's dialect as statements and expressions: placeholders, data types, arrays, JSONB, text search,
+        // windows, aggregates, triggers and notifications. It runs nothing and names no engine.
+        .target(
+            name: "PostgreSQL SQL",
+            dependencies: [
+                .product(name: "SQL", package: "swift-sql"),
+                .product(name: "ISO 9075 Foundation", package: "swift-iso-9075"),
+                .product(name: "ISO 9075 Call-Level Interface", package: "swift-iso-9075"),
+                .product(name: "Byte", package: "swift-byte"),
+                .product(name: "Time", package: "swift-time"),
+                .product(name: "RFC 4122", package: "swift-rfc-4122"),
+                .product(name: "Tagged", package: "swift-tagged", condition: .when(traits: ["Tagged"])),
+            ]
+        ),
+        // The database: configuration, connections, transactions, notifications and errors, over PostgresNIO as a
+        // private engine under the PostgresNIO trait.
         .target(
             name: "PostgreSQL",
             dependencies: [
+                .target(name: "PostgreSQL SQL"),
                 .product(name: "SQL", package: "swift-sql"),
                 .product(name: "ISO 9075 Foundation", package: "swift-iso-9075"),
                 .product(name: "ISO 9075 Call-Level Interface", package: "swift-iso-9075"),
@@ -49,8 +68,8 @@ let package = Package(
                 .product(name: "PostgresNIO", package: "postgres-nio", condition: .when(traits: ["PostgresNIO"])),
                 .product(name: "NIOCore", package: "swift-nio", condition: .when(traits: ["PostgresNIO"])),
                 .product(name: "NIOPosix", package: "swift-nio", condition: .when(traits: ["PostgresNIO"])),
+                .product(name: "NIOSSL", package: "swift-nio-ssl", condition: .when(traits: ["PostgresNIO"])),
                 .product(name: "Logging", package: "swift-log", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "Tagged", package: "swift-tagged", condition: .when(traits: ["Tagged"])),
             ]
         ),
         .target(
@@ -63,14 +82,12 @@ let package = Package(
                 .product(name: "ISO 9075 Call-Level Interface", package: "swift-iso-9075"),
                 .product(name: "CustomDump", package: "swift-custom-dump"),
                 .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
-                .product(name: "PostgresNIO", package: "postgres-nio", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "NIOPosix", package: "swift-nio", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "Logging", package: "swift-log", condition: .when(traits: ["PostgresNIO"])),
             ]
         ),
         .testTarget(
             name: "PostgreSQL Tests",
             dependencies: [
+                .target(name: "PostgreSQL SQL"),
                 .target(name: "PostgreSQL"),
                 .target(name: "PostgreSQL Test Support"),
                 .product(name: "SQL", package: "swift-sql"),

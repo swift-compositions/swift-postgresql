@@ -20,7 +20,7 @@
                 }
             }
             #expect(error?.kind == .server)
-            #expect(error?.code == .foreignKeyViolation)
+            #expect(error?.code == .uniqueViolation)
             #expect(error?.code?.rawValue == "23505")
             #expect(error?.code?.class == "23")
             #expect(error?.detail?.contains("taken") == true)

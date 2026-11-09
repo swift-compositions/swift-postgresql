@@ -53,9 +53,9 @@ public import PostgreSQL
                         administration = try PostgreSQL.Database(configuration: single)
                         try await create(name, on: administration)
                     }
-                } catch let error as PostgreSQL.Error where [.connect, .timeout].contains(error.kind)
-                    && ProcessInfo.processInfo.environment["POSTGRES_HOST"] == nil
-                {
+                } catch let error as PostgreSQL.Error {
+                    let unreachable = [.connect, .timeout].contains(error.kind)
+                    guard unreachable, ProcessInfo.processInfo.environment["POSTGRES_HOST"] == nil else { throw error }
                     await administration.close()
                     try Test.cancel("No PostgreSQL server is reachable at the default address and POSTGRES_HOST is unset: \(error)")
                 }

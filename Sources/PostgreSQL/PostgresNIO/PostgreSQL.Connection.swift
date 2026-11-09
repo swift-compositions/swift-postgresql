@@ -40,7 +40,7 @@ public import PostgreSQL_SQL
             /// state is unknown.
             func discard() -> String {
                 do {
-                    try postgres.close().wait()
+                    try waiting(for: postgres.close(), statement: nil)
                     return "the connection was closed"
                 } catch {
                     return "closing the connection failed: \(error)"
@@ -50,13 +50,32 @@ public import PostgreSQL_SQL
             func result(_ statement: ISO_9075.Rendering) throws(ISO_9075.Error) -> PostgresQueryResult {
                 let query = try PostgresQuery(statement)
                 do {
-                    return try postgres.query(query, logger: logger).wait()
+                    return try waiting(for: postgres.query(query, logger: logger), statement: statement.sql)
                 } catch {
                     let failure = PostgreSQL.Error.translated(error, statement: statement.sql)
                     let reported = ISO_9075.Error(failure)
                     failures.record(failure, as: reported)
                     throw reported
                 }
+            }
+
+            /// Blocks until `future` completes, or until the connection closes, whichever is first.
+            ///
+            /// When the server ends a TLS connection while a statement runs, PostgresNIO can close the channel
+            /// without failing that statement's future (#26), and a bare `wait()` then blocks its thread for ever.
+            func waiting<Value: Sendable>(for future: EventLoopFuture<Value>, statement: String?) throws -> Value {
+                let promise = postgres.eventLoop.makePromise(of: Value.self)
+                future.cascade(to: promise)
+                postgres.closeFuture.whenComplete { _ in
+                    promise.fail(
+                        PostgreSQL.Error(
+                            kind: .closed,
+                            message: "the connection closed before the server answered",
+                            statement: statement
+                        )
+                    )
+                }
+                return try promise.futureResult.wait()
             }
         }
     }

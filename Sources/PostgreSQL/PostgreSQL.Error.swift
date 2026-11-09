@@ -1,5 +1,5 @@
-public import PostgreSQL_SQL
 public import ISO_9075_Call_Level_Interface
+public import PostgreSQL_SQL
 
 extension PostgreSQL {
     /// A failure to reach the server, or one the server reported: what kind it is, its SQLSTATE code when the server

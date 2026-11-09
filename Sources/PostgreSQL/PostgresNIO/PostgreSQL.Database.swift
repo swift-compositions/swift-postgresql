@@ -28,10 +28,10 @@ public import PostgreSQL_SQL
             /// - Throws: ``PostgreSQL/Error/Kind/tls`` when a root certificate can't be read.
             public init(configuration: PostgreSQL.Configuration) throws(PostgreSQL.Error) {
                 self.engine = Engine(
-                configuration: configuration,
-                client: try configuration.client(),
-                probe: try configuration.connection()
-            )
+                    configuration: configuration,
+                    client: try configuration.client(),
+                    probe: try configuration.connection()
+                )
             }
 
             /// The configuration the database was made with.

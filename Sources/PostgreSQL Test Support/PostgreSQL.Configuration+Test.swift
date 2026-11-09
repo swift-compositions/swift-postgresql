@@ -1,5 +1,5 @@
-public import PostgreSQL
 internal import Foundation
+public import PostgreSQL
 
 extension PostgreSQL.Configuration {
     /// The configuration the test suites connect with: ``test(environment:)`` of the process environment.

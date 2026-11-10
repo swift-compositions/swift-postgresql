@@ -40,6 +40,8 @@ public struct PostgreSQL: ISO_9075.Dialect {
 
     public var roundPrecisionClose: String { " AS INTEGER)" }
 
+    public var binaryLargeObject: String { "BYTEA" }
+
     private func typeName(_ kind: ISO_9075.Value.Kind) -> String {
         switch kind {
         case .bool: Bool.typeName

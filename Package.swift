@@ -91,6 +91,7 @@ let package = Package(
                 .target(name: "PostgreSQL"),
                 .target(name: "PostgreSQL Test Support"),
                 .product(name: "SQL", package: "swift-sql"),
+                .product(name: "SQL Test Support", package: "swift-sql"),
                 .product(name: "SQL Macros", package: "swift-sql"),
                 .product(name: "SQL Migrations", package: "swift-sql"),
                 .product(name: "ISO 9075 Foundation", package: "swift-iso-9075"),

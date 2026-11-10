@@ -9,7 +9,7 @@ public import PostgreSQL_SQL
             let connection: PostgreSQL.Connection
             let name: ISO_9075.Identifier
             let batch: Int
-            let decode: (inout PostgreSQL.Decoder) throws(QueryDecodingError) -> Element
+            let decode: (inout QueryRowDecoder<PostgreSQL.Row>) throws(QueryDecodingError) -> Element
             var buffer: [PostgreSQL.Row] = []
             var isOpen: Bool
             var isExhausted = false
@@ -18,7 +18,7 @@ public import PostgreSQL_SQL
                 _ statement: ISO_9075.Fragment,
                 on connection: PostgreSQL.Connection,
                 batch: Int,
-                decode: @escaping (inout PostgreSQL.Decoder) throws(QueryDecodingError) -> Element
+                decode: @escaping (inout QueryRowDecoder<PostgreSQL.Row>) throws(QueryDecodingError) -> Element
             ) throws(ISO_9075.Error) {
                 precondition(batch > 0, "A cursor fetches at least one row per batch")
                 self.connection = connection
@@ -37,7 +37,7 @@ public import PostgreSQL_SQL
                     isExhausted = buffer.count < batch
                 }
                 guard !buffer.isEmpty else { return nil }
-                var decoder = PostgreSQL.Decoder(row: buffer.removeFirst())
+                var decoder = QueryRowDecoder(row: buffer.removeFirst())
                 do {
                     return try decode(&decoder)
                 } catch {

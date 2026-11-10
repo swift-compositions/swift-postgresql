@@ -115,10 +115,15 @@ extension PostgreSQL.Error.Code {
 }
 
 extension ISO_9075.Error {
-    /// A ``PostgreSQL/Error`` as the call-level interface's error, for a contract that names no database: an
-    /// execution error described by its kind, code, message and statement.
+    /// A ``PostgreSQL/Error`` as the call-level interface's error, for a contract that names no database: a diagnostic
+    /// with the server's SQLSTATE and message when the server reported one, otherwise an execution error described by
+    /// its kind, message and statement.
     public init(_ error: PostgreSQL.Error) {
-        self = .execution(error.description)
+        guard let code = error.code, let state = ISO_9075.Diagnostic.State(rawValue: code.rawValue) else {
+            self = .execution(error.description)
+            return
+        }
+        self = .diagnostic(ISO_9075.Diagnostic(state: state, message: error.message))
     }
 }
 
@@ -131,6 +136,8 @@ extension PostgreSQL.Error {
         case .decoding(let reason): self.init(kind: .value, message: reason)
         case .connection(let reason): self.init(kind: .connect, message: reason)
         case .execution(let reason), .transaction(let reason): self.init(kind: .server, message: reason)
+        case .diagnostic(let diagnostic):
+            self.init(kind: .server, code: Code(rawValue: diagnostic.state.rawValue), message: diagnostic.message)
         }
     }
 }

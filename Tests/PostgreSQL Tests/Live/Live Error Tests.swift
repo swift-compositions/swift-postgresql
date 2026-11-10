@@ -31,18 +31,19 @@
             #expect(keys == [.text("taken")], "the failed write rolled back")
         }
 
-        @Test func `the call-level interface carries the code in its message`() async throws {
+        @Test func `the call-level interface carries the server's SQLSTATE as its diagnostic's state`() async throws {
             _ = try await database.execute(#"INSERT INTO "keys" VALUES ('twice') ON CONFLICT DO NOTHING"#)
             let error = await #expect(throws: ISO_9075.Error.self) {
                 try await database.write { connection throws(ISO_9075.Error) in
                     _ = try connection.execute(#"INSERT INTO "keys" VALUES ('twice')"#)
                 }
             }
-            guard case .execution(let message)? = error else {
-                Issue.record("expected an execution error, got \(String(describing: error))")
+            guard case .diagnostic(let diagnostic)? = error else {
+                Issue.record("expected a diagnostic, got \(String(describing: error))")
                 return
             }
-            #expect(message.contains("23505"))
+            #expect(diagnostic.state.rawValue == "23505")
+            #expect(diagnostic.state.class == ISO_9075.Diagnostic.State.integrityConstraintViolation.class)
         }
 
         @Test func `an error of the caller's own comes out unchanged`() async throws {

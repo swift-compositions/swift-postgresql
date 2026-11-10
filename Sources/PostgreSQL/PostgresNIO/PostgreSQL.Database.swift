@@ -202,6 +202,50 @@ public import PostgreSQL_SQL
             try await interface { () async throws in try await run(begin: nil, end: nil, body) }
         }
 
+        @_disfavoredOverload
+        public func read<Value: Sendable, Thrown: Swift.Error>(
+            _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
+        ) async throws(ISO_9075.Failure<Thrown>) -> Value {
+            try await separating(Thrown.self) { () async throws in
+                try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
+            }
+        }
+
+        @_disfavoredOverload
+        public func write<Value: Sendable, Thrown: Swift.Error>(
+            _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
+        ) async throws(ISO_9075.Failure<Thrown>) -> Value {
+            try await separating(Thrown.self) { () async throws in
+                try await run(begin: "BEGIN", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
+            }
+        }
+
+        @_disfavoredOverload
+        public func withRollback<Value: Sendable, Thrown: Swift.Error>(
+            _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
+        ) async throws(ISO_9075.Failure<Thrown>) -> Value {
+            try await separating(Thrown.self) { () async throws in
+                try await run(begin: "BEGIN", end: "ROLLBACK") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
+            }
+        }
+
+        /// Runs `operation`, which runs a caller's closure through ``Raised/raising(_:)``: what that closure threw
+        /// comes out as the body's failure, and anything else as the database's.
+        private func separating<T, Thrown: Swift.Error>(
+            _ thrown: Thrown.Type,
+            _ operation: () async throws -> T
+        ) async throws(ISO_9075.Failure<Thrown>) -> T {
+            do {
+                return try await operation()
+            } catch let raised as Raised<Thrown> {
+                throw .body(raised.thrown)
+            } catch let error as ISO_9075.Error {
+                throw .database(error)
+            } catch {
+                throw .database(ISO_9075.Error(PostgreSQL.Error.translated(error)))
+            }
+        }
+
         private func interface<T>(_ operation: () async throws -> T) async throws(ISO_9075.Error) -> T {
             do {
                 return try await operation()
@@ -284,6 +328,19 @@ public import PostgreSQL_SQL
                 } onCancel: {
                     cancellation.cancel()
                 }
+            }
+        }
+    }
+
+    /// What a caller's closure threw, carried unchanged through a transaction, which rolls back on it.
+    struct Raised<Thrown: Swift.Error>: Swift.Error {
+        let thrown: Thrown
+
+        static func raising<T>(_ body: () throws(Thrown) -> T) throws(Raised) -> T {
+            do {
+                return try body()
+            } catch {
+                throw Raised(thrown: error)
             }
         }
     }

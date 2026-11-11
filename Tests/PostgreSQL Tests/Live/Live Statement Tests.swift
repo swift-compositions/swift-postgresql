@@ -1,4 +1,5 @@
 #if PostgresNIO
+    import Cardinal
     import ISO_9075_Call_Level_Interface
     import ISO_9075_Foundation
     import PostgreSQL
@@ -14,10 +15,10 @@
 
         @Test func `insert, update and delete return their rows`() async throws {
             let (inserted, updated, deleted, remaining) = try await database.write { connection throws(ISO_9075.Error) in
-                let inserted = try Account.insert { Account(id: 1, owner: "ada", balance: 10) }.returning(\.self).fetchAll(connection)
-                let updated = try Account.where { $0.id.eq(1) }.update { $0.balance += 5 }.returning { $0.balance }.fetchAll(connection)
-                let deleted = try Account.where { $0.id.eq(1) }.delete().returning { $0.owner }.fetchAll(connection)
-                return (inserted, updated, deleted, try Account.fetchCount(connection))
+                let inserted = try Account.insert { Account(id: 1, owner: "ada", balance: 10) }.returning(\.self).fetch.all(connection)
+                let updated = try Account.where { $0.id.eq(1) }.update { $0.balance += 5 }.returning { $0.balance }.fetch.all(connection)
+                let deleted = try Account.where { $0.id.eq(1) }.delete().returning { $0.owner }.fetch.all(connection)
+                return (inserted, updated, deleted, try Account.fetch.count(connection))
             }
             #expect(inserted == [Account(id: 1, owner: "ada", balance: 10)])
             #expect(updated == [15])
@@ -41,7 +42,7 @@
                 try Account.insert { Account(id: 2, owner: "bob", balance: 1) }.execute(connection)
                 try Account.upsert { Account(id: 2, owner: "bob", balance: 99) }.execute(connection)
                 try Account.upsert { Account(id: 3, owner: "cy", balance: 3) }.execute(connection)
-                return try Account.order(by: \.id).fetchAll(connection)
+                return try Account.order(by: \.id).fetch.all(connection)
             }
             #expect(accounts == [Account(id: 2, owner: "bob", balance: 99), Account(id: 3, owner: "cy", balance: 3)])
             _ = try await database.execute(#"DELETE FROM "accounts""#)
@@ -54,14 +55,14 @@
 
         var database: PostgreSQL.Database { PostgreSQL.TestDatabase.database }
 
-        func count() async throws -> Int {
-            try await database.read { connection throws(ISO_9075.Error) in try Account.fetchCount(connection) }
+        func count() async throws -> Cardinal {
+            try await database.read { connection throws(ISO_9075.Error) in try Account.fetch.count(connection) }
         }
 
         @Test func `withRollback discards its writes`() async throws {
             let inside = try await database.withRollback { connection throws(ISO_9075.Error) in
                 try Account.insert { Account(id: 10, owner: "tmp", balance: 0) }.execute(connection)
-                return try Account.fetchCount(connection)
+                return try Account.fetch.count(connection)
             }
             #expect(inside == 1)
             #expect(try await count() == 0)
@@ -89,7 +90,7 @@
                 try connection.withSavepoint("named") { connection throws(ISO_9075.Error) in
                     try Account.insert { Account(id: 14, owner: "released", balance: 0) }.execute(connection)
                 }
-                return try Account.order(by: \.id).select(\.owner).fetchAll(connection)
+                return try Account.order(by: \.id).select(\.owner).fetch.all(connection)
             }
             #expect(owners == ["kept", "released"])
         }

@@ -18,10 +18,10 @@
         @Test func `every binding type round-trips through a row`() async throws {
             let draft = try LiveFixtures.sample("round trip")
             let inserted = try await database.write { connection throws(ISO_9075.Error) in
-                try Sample.insert { draft }.returning(\.self).fetchOne(connection)
+                try Sample.insert { draft }.returning(\.self).fetch.one(connection)
             }
             let fetched = try await database.read { connection throws(ISO_9075.Error) in
-                try Sample.where { $0.name.eq("round trip") }.fetchOne(connection)
+                try Sample.where { $0.name.eq("round trip") }.fetch.one(connection)
             }
             #expect(inserted == fetched)
             #expect(fetched?.count == draft.count)
@@ -93,7 +93,7 @@
             var draft = try LiveFixtures.sample("microseconds")
             draft.createdAt = try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 654_321_987)
             let fetched = try await database.write { [draft] connection throws(ISO_9075.Error) in
-                try Sample.insert { draft }.returning(\.createdAt).fetchOne(connection)
+                try Sample.insert { draft }.returning(\.createdAt).fetch.one(connection)
             }
             #expect(fetched == (try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 654_321_000)))
         }
@@ -122,7 +122,7 @@
             var draft = try LiveFixtures.sample("empty tags")
             draft.tags = []
             let fetched = try await database.write { [draft] connection throws(ISO_9075.Error) in
-                try Sample.insert { draft }.returning(\.tags).fetchOne(connection)
+                try Sample.insert { draft }.returning(\.tags).fetch.one(connection)
             }
             #expect(fetched == [])
         }
@@ -131,7 +131,7 @@
             let draft = try LiveFixtures.sample("cast", count: 7)
             let texts = try await database.write { connection throws(ISO_9075.Error) in
                 try Sample.insert { draft }.execute(connection)
-                return try Sample.where { $0.name.eq("cast") }.select { ($0.count.cast(as: String.self), $0.count.cast()) }.fetchAll(connection)
+                return try Sample.where { $0.name.eq("cast") }.select { ($0.count.cast(as: String.self), $0.count.cast()) }.fetch.all(connection)
             }
             #expect(texts.map(\.0) == ["7"])
             #expect(texts.map(\.1) == [7.0])

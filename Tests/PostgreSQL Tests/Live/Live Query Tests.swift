@@ -21,7 +21,7 @@
                     .select { ($0.player, $0.points, PostgreSQL.Window.rank().over { $0.partition(by: Score.columns.player).order(by: Score.columns.points.desc()) }) }
                     .order { $0.player }
                     .order { $0.points.desc() }
-                    .fetchAll(connection)
+                    .fetch.all(connection)
             }
             #expect(ranks.map(\.2) == [1, 2, 3, 1, 2])
         }
@@ -32,7 +32,7 @@
                     .select { ($0.points, PostgreSQL.Window.rowNumber().over("by_points")) }
                     .window("by_points") { $0.order(by: Score.columns.points) }
                     .order(by: \.points)
-                    .fetchAll(connection)
+                    .fetch.all(connection)
             }
             #expect(rows.map(\.1) == [1, 2, 3, 4, 5])
         }
@@ -42,7 +42,7 @@
                 try Score
                     .select { PostgreSQL.Window.Function(aggregate: $0.points.sum()).over { $0.order(by: Score.columns.points).rows(between: .unboundedPreceding, and: .currentRow) } }
                     .order(by: \.points)
-                    .fetchAll(connection)
+                    .fetch.all(connection)
             }
             #expect(sums == [10, 30, 60, 100, 150])
         }
@@ -52,9 +52,9 @@
                 (
                     try Score.group(by: \.player).select { ($0.player, $0.points.arrayAgg(order: $0.points.asc()), $0.points.stringAgg("-", order: $0.points.asc())) }
                         .order(by: \.player)
-                        .fetchAll(connection),
-                    try Score.select { $0.points.stddev() }.fetchOne(connection),
-                    try Score.where { $0.points.eq(10) }.select { ($0.points.cast() / 3.0).round(2) }.fetchOne(connection)
+                        .fetch.all(connection),
+                    try Score.select { $0.points.stddev() }.fetch.one(connection),
+                    try Score.where { $0.points.eq(10) }.select { ($0.points.cast() / 3.0).round(2) }.fetch.one(connection)
                 )
             }
             #expect(agg.map(\.0) == ["ada", "bob"])
@@ -70,7 +70,7 @@
                     .where { $0.body.matches(PostgreSQL.TextSearch.query("swift databases", configuration: .english), configuration: .english) }
                     .select { ($0.title, PostgreSQL.TextSearch.vector($0.body, configuration: .english).rank(PostgreSQL.TextSearch.query("swift", configuration: .english))) }
                     .order(by: \.title)
-                    .fetchAll(connection)
+                    .fetch.all(connection)
             }
             #expect(titles.map(\.0) == ["Swift and databases"])
             #expect(titles.allSatisfy { $0.1 > 0 })
@@ -82,10 +82,10 @@
                 try Sample.insert { draft }.execute(connection)
                 let sample = Sample.where { $0.name.eq("json") }
                 return (
-                    try sample.select { $0.settings.fieldAsText("volume") }.fetchOne(connection),
-                    try sample.select { $0.settings.hasKey("volume") }.fetchOne(connection),
-                    try sample.select { $0.settings.contains(["volume": 7]) }.fetchOne(connection),
-                    try sample.select { $0.settings.concat(["bass": 2]).removing("volume") }.fetchOne(connection)
+                    try sample.select { $0.settings.fieldAsText("volume") }.fetch.one(connection),
+                    try sample.select { $0.settings.hasKey("volume") }.fetch.one(connection),
+                    try sample.select { $0.settings.contains(["volume": 7]) }.fetch.one(connection),
+                    try sample.select { $0.settings.concat(["bass": 2]).removing("volume") }.fetch.one(connection)
                 )
             }
             #expect(volume == "7")

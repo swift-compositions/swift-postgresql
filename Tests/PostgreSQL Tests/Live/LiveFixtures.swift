@@ -1,4 +1,4 @@
-#if PostgresNIO
+#if PostgresNIO && !os(Windows)
     import Byte
     import ISO_9075_Foundation
     import PostgreSQL

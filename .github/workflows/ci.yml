@@ -31,10 +31,13 @@ jobs:
   # against a server that requires TLS, with every suite connecting `verified` to a certificate made here for
   # `localhost` alone. POSTGRES_HOST is set in both legs, so a server that doesn't answer fails the live suites
   # instead of cancelling them.
+  # No `.build` cache, as in the shared workflow: the dependencies follow branches and no Package.resolved is
+  # tracked, so a restored build folder compiled this commit against the dependency heads it was saved with
+  # (rule-law/rule.law#47, M2). Each run resolves the current heads and prints them before it builds.
   live:
     name: live / linux / ${{ matrix.tls }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -56,13 +59,11 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: .build
-          key: live-${{ matrix.tls }}-${{ hashFiles('Package.swift') }}-${{ github.sha }}
-          restore-keys: |
-            live-${{ matrix.tls }}-${{ hashFiles('Package.swift') }}-
-            live-${{ matrix.tls }}-
+      - name: Resolve the dependency heads
+        run: |
+          docker run --rm -v "$PWD:/package" -w /package swift:6.4-noble \
+            sh -c 'swift package resolve; status=$?; chmod -R a+rwX .build Package.resolved; exit $status'
+          jq -r '.pins[] | "\(.identity) \(.state.branch // .state.version) \(.state.revision)"' Package.resolved
 
       - name: Require TLS on the server, with a certificate for localhost alone
         if: matrix.tls == 'verified'

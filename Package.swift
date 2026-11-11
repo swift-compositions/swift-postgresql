@@ -2,6 +2,11 @@
 
 import PackageDescription
 
+let postgresNIO: TargetDependencyCondition? = .when(
+    platforms: [.macOS, .macCatalyst, .iOS, .tvOS, .watchOS, .visionOS, .linux, .android, .wasi, .openbsd],
+    traits: ["PostgresNIO"]
+)
+
 let package = Package(
     name: "swift-postgresql",
     platforms: [
@@ -17,7 +22,10 @@ let package = Package(
         .library(name: "PostgreSQL Test Support", targets: ["PostgreSQL Test Support"]),
     ],
     traits: [
-        .trait(name: "PostgresNIO", description: "Connection, pools, transactions, notifications and decoding over PostgresNIO"),
+        .trait(
+            name: "PostgresNIO",
+            description: "Connection, pools, transactions, notifications and decoding over PostgresNIO; not on Windows, where PostgresNIO does not build"
+        ),
         .trait(name: "Tagged", description: "PostgreSQL conformances for swift-atoms Tagged"),
     ],
     dependencies: [
@@ -65,11 +73,11 @@ let package = Package(
                 .product(name: "Byte", package: "swift-byte"),
                 .product(name: "Time", package: "swift-time"),
                 .product(name: "RFC 4122", package: "swift-rfc-4122"),
-                .product(name: "PostgresNIO", package: "postgres-nio", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "NIOCore", package: "swift-nio", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "NIOPosix", package: "swift-nio", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "NIOSSL", package: "swift-nio-ssl", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "Logging", package: "swift-log", condition: .when(traits: ["PostgresNIO"])),
+                .product(name: "PostgresNIO", package: "postgres-nio", condition: postgresNIO),
+                .product(name: "NIOCore", package: "swift-nio", condition: postgresNIO),
+                .product(name: "NIOPosix", package: "swift-nio", condition: postgresNIO),
+                .product(name: "NIOSSL", package: "swift-nio-ssl", condition: postgresNIO),
+                .product(name: "Logging", package: "swift-log", condition: postgresNIO),
             ]
         ),
         .target(
@@ -101,9 +109,9 @@ let package = Package(
                 .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "CustomDump", package: "swift-custom-dump"),
                 .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
-                .product(name: "PostgresNIO", package: "postgres-nio", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "NIOPosix", package: "swift-nio", condition: .when(traits: ["PostgresNIO"])),
-                .product(name: "Logging", package: "swift-log", condition: .when(traits: ["PostgresNIO"])),
+                .product(name: "PostgresNIO", package: "postgres-nio", condition: postgresNIO),
+                .product(name: "NIOPosix", package: "swift-nio", condition: postgresNIO),
+                .product(name: "Logging", package: "swift-log", condition: postgresNIO),
                 .product(name: "Tagged", package: "swift-tagged", condition: .when(traits: ["Tagged"])),
             ]
         ),

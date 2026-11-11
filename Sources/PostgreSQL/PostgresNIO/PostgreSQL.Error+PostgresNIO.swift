@@ -1,5 +1,5 @@
 public import PostgreSQL_SQL
-#if PostgresNIO
+#if PostgresNIO && !os(Windows)
     internal import ISO_9075_Call_Level_Interface
     internal import NIOCore
     internal import NIOSSL

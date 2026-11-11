@@ -1,4 +1,4 @@
-#if PostgresNIO
+#if PostgresNIO && !os(Windows)
     import ISO_9075_Call_Level_Interface
     import PostgreSQL
     import PostgreSQL_Test_Support

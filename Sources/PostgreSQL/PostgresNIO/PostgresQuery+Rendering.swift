@@ -1,5 +1,5 @@
 public import PostgreSQL_SQL
-#if PostgresNIO
+#if PostgresNIO && !os(Windows)
     internal import Byte
     internal import Foundation
     package import ISO_9075_Call_Level_Interface

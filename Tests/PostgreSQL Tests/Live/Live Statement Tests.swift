@@ -1,4 +1,4 @@
-#if PostgresNIO
+#if PostgresNIO && !os(Windows)
     import Cardinal
     import ISO_9075_Call_Level_Interface
     import ISO_9075_Foundation

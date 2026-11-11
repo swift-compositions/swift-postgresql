@@ -61,7 +61,9 @@ import Testing
         let scratch = package.appending(path: ".build/public-api")
         let log = scratch.appending(path: "dump.log")
         try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
-        FileManager.default.createFile(atPath: log.path, contents: nil)
+        guard FileManager.default.createFile(atPath: log.path, contents: nil) else {
+            throw DumpFailure(status: 0, transcript: "could not create \(log.path)")
+        }
         let output = try FileHandle(forWritingTo: log)
         defer { try? output.close() }
 

@@ -66,10 +66,6 @@ extension PostgreSQL.JSON {
             try next { $0 as? Bool }
         }
 
-        public mutating func decode(_ columnType: Int.Type) throws(QueryDecodingError) -> Int? {
-            try next { ($0 as? NSNumber)?.intValue }
-        }
-
         public mutating func decode(_ columnType: Time.Instant.Type) throws(QueryDecodingError) -> Time.Instant? {
             guard let text = try next({ $0 as? String }) else { return nil }
             do {

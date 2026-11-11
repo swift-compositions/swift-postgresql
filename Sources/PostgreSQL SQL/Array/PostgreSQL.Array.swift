@@ -170,10 +170,6 @@ extension PostgreSQL.Array.Field {
             try decode(Int64.self).map { $0 != 0 }
         }
 
-        mutating func decode(_ columnType: Int.Type) throws(QueryDecodingError) -> Int? {
-            try parsed(Int.init, as: Int.self)
-        }
-
         mutating func decode(_ columnType: Time.Instant.Type) throws(QueryDecodingError) -> Time.Instant? {
             guard let text = text() else { return nil }
             do {

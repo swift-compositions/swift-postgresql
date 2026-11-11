@@ -8,7 +8,7 @@
     @Suite(.postgreSQL(configuration: .test, setUp: []))
     struct `Live execution laws` {
         @Test func `swift-sql's statements run on PostgreSQL as the laws expect`() async throws {
-            #expect(try await ExecutionLaws.violations(of: PostgreSQL.TestDatabase.database) == [])
+            #expect(try await Laws.violations(of: PostgreSQL.TestDatabase.database) == [])
         }
     }
 #endif

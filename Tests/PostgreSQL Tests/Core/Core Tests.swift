@@ -30,7 +30,6 @@ enum CoreFixtures {
         mutating func decode(_ columnType: UInt64.Type) throws(QueryDecodingError) -> UInt64? { text.flatMap { UInt64($0) } }
         mutating func decode(_ columnType: String.Type) throws(QueryDecodingError) -> String? { text }
         mutating func decode(_ columnType: Bool.Type) throws(QueryDecodingError) -> Bool? { text.map { $0 == "t" } }
-        mutating func decode(_ columnType: Int.Type) throws(QueryDecodingError) -> Int? { text.flatMap { Int($0) } }
         mutating func decode(_ columnType: Time.Instant.Type) throws(QueryDecodingError) -> Time.Instant? { nil }
         mutating func decode(_ columnType: RFC_4122.UUID.Type) throws(QueryDecodingError) -> RFC_4122.UUID? { nil }
     }

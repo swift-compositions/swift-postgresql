@@ -33,7 +33,7 @@ jobs:
   # instead of cancelling them.
   # No `.build` cache, as in the shared workflow: the dependencies follow branches and no Package.resolved is
   # tracked, so a restored build folder compiled this commit against the dependency heads it was saved with
-  # (rule-law/rule.law#47, M2). Each run resolves the current heads and prints them before it builds.
+  # (night 2, M2). Each run resolves the current heads and prints them before it builds.
   live:
     name: live / linux / ${{ matrix.tls }}
     runs-on: ubuntu-24.04

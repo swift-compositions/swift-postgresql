@@ -84,7 +84,7 @@ import Testing
         try swift.run()
         swift.waitUntilExit()
 
-        let transcript = (try? String(contentsOf: log, encoding: .utf8)) ?? ""
+        let transcript = try String(contentsOf: log, encoding: .utf8)
         guard swift.terminationStatus == 0 else {
             throw DumpFailure(status: swift.terminationStatus, transcript: String(transcript.suffix(4000)))
         }
@@ -94,7 +94,7 @@ import Testing
         return URL(filePath: String(line.dropFirst("Files written to ".count)))
     }
 
-    struct DumpFailure: Error, CustomStringConvertible {
+    struct DumpFailure: Swift.Error, CustomStringConvertible {
         let status: Int32
         let transcript: String
         var description: String { "swift package dump-symbol-graph exited \(status):\n\(transcript)" }

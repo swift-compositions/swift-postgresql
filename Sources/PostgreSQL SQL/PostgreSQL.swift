@@ -5,7 +5,9 @@ internal import Time
 
 public struct PostgreSQL: ISO_9075.Dialect {
     public init() {}
+}
 
+extension PostgreSQL {
     public func placeholder(_ offset: Int) -> String { "$\(offset)" }
 
     public func literal(_ value: ISO_9075.Value) throws(ISO_9075.Value.Failure) -> String {

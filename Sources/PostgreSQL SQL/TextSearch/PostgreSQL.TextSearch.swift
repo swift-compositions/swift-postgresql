@@ -15,8 +15,8 @@ extension PostgreSQL.TextSearch {
 
     public static func query(
         _ text: some QueryExpression<some _OptionalPromotable<String?>>,
-        configuration: Configuration,
-        syntax: Syntax = .web
+        syntax: Syntax = .web,
+        configuration: Configuration
     ) -> some QueryExpression<Query> {
         SQLQueryExpression("\(raw: syntax.rawValue)(\(configuration.queryFragment), \(text))", as: Query.self)
     }

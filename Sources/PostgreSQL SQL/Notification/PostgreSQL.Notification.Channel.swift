@@ -29,7 +29,7 @@ extension PostgreSQL.Notification.Channel where Payload == String {
     }
 }
 
-extension PostgreSQL.Notification.Channel where Payload: Codable {
+extension PostgreSQL.Notification.Channel where Payload: Codable & SendableMetatype {
     public init(json name: String) {
         self.init(
             name: name,

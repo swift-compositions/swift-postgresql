@@ -9,7 +9,7 @@
     struct `Live errors` {
         var database: PostgreSQL.Database { PostgreSQL.TestDatabase.database }
 
-        struct Refusal: Error, Equatable {}
+        struct Refusal: Swift.Error, Equatable {}
 
         @Test func `a unique violation reaches the caller with SQLSTATE 23505`() async throws {
             _ = try await database.execute(#"INSERT INTO "keys" VALUES ('taken')"#)

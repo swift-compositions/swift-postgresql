@@ -1,5 +1,5 @@
 public import Byte
-public import ISO_9075_Foundation
+internal import ISO_9075_Foundation
 public import SQL
 
 extension QueryExpression where QueryValue: PostgreSQL.JSON.Document {

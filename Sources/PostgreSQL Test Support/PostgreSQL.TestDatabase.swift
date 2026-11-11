@@ -1,5 +1,5 @@
-public import PostgreSQL
 #if PostgresNIO && !os(Windows)
+    public import PostgreSQL
     public import ISO_9075_Call_Level_Interface
     internal import Foundation
     public import Testing
@@ -47,7 +47,6 @@ public import PostgreSQL
                     do {
                         try await create(name, on: administration)
                     } catch let error as PostgreSQL.Error where error.code == .invalidCatalogName {
-                        // No database of the configured name to administer from: every server has `postgres`.
                         await administration.close()
                         single.database = "postgres"
                         administration = try PostgreSQL.Database(configuration: single)

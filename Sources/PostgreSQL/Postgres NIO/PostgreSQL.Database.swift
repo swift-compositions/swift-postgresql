@@ -1,10 +1,10 @@
-public import PostgreSQL_SQL
 #if PostgresNIO && !os(Windows)
+    public import PostgreSQL_SQL
     public import ISO_9075_Call_Level_Interface
     internal import Logging
     internal import NIOCore
     internal import NIOPosix
-    package import PostgresNIO
+    internal import PostgresNIO
     internal import Synchronization
 
     extension PostgreSQL {
@@ -23,73 +23,28 @@ public import PostgreSQL_SQL
 
             package let engine: Engine
 
-            /// A database for `configuration`. Connects on first use.
+            /// A database for `configuration` whose acquire timeout runs on `clock`. Connects on first use.
             ///
             /// - Throws: ``PostgreSQL/Error/Kind/tls`` when a root certificate can't be read.
-            public init(configuration: PostgreSQL.Configuration) throws(PostgreSQL.Error) {
-                self.engine = Engine(
-                    configuration: configuration,
-                    client: try configuration.client(),
-                    probe: try configuration.connection()
-                )
-            }
-
-            /// The configuration the database was made with.
-            public var configuration: PostgreSQL.Configuration { engine.configuration }
-
-            /// Closes every connection and stops the database's threads. A read or write after this throws
-            /// ``PostgreSQL/Error/Kind/closed``.
-            public func close() async {
-                await engine.close()
+            public init<Timer: Clock<Duration>>(
+                configuration: PostgreSQL.Configuration,
+                clock: Timer = ContinuousClock()
+            ) throws(PostgreSQL.Error) {
+                self.engine = Engine(configuration: configuration, clock: clock, client: try configuration.client())
             }
         }
     }
 
     extension PostgreSQL.Database {
-        /// What a database runs on: the engine's client, the task that runs it, and the threads closures run on.
-        package final class Engine: Sendable {
-            let configuration: PostgreSQL.Configuration
-            package let client: PostgresClient
-            let threads: NIOThreadPool
-            let logger: Logger
-            let runner: Task<Void, Never>
-            let closed = Atomic<Bool>(false)
-            let attempts: Attempts
-            let probe: PostgresConnection.Configuration
+        /// The configuration the database was made with.
+        public var configuration: PostgreSQL.Configuration { engine.configuration }
 
-            init(
-                configuration: PostgreSQL.Configuration,
-                client: PostgresClient.Configuration,
-                probe: PostgresConnection.Configuration
-            ) {
-                let attempts = Attempts()
-                let logger = Logger(label: "PostgreSQL", factory: { _ in Listener(attempts: attempts) })
-                let client = PostgresClient(configuration: client, backgroundLogger: logger)
-                self.attempts = attempts
-                self.probe = probe
-                self.configuration = configuration
-                self.client = client
-                self.logger = logger
-                self.threads = NIOThreadPool(numberOfThreads: max(1, configuration.poolSize))
-                self.threads.start()
-                self.runner = Task { await client.run() }
-            }
-
-            deinit {
-                runner.cancel()
-                threads.shutdownGracefully { _ in }
-            }
-
-            func close() async {
-                guard !closed.exchange(true, ordering: .acquiringAndReleasing) else { return }
-                runner.cancel()
-                await runner.value
-                try? await threads.shutdownGracefully()
-            }
+        /// Closes every connection and stops the database's threads. A read or write after this throws
+        /// ``PostgreSQL/Error/Kind/closed``.
+        public func close() async {
+            await engine.close()
         }
     }
-
-    // MARK: - Closures that throw anything
 
     extension PostgreSQL.Database {
         /// Runs `body` in a read-only transaction. What `body` throws comes out unchanged, but for a failure of the
@@ -126,32 +81,30 @@ public import PostgreSQL_SQL
         }
     }
 
-    // MARK: - Closures that throw PostgreSQL.Error
-
     extension PostgreSQL.Database {
         public func read<T: Sendable>(
             _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
         ) async throws(PostgreSQL.Error) -> T {
-            try await typed { () async throws in try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body) }
+            try await typed { try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body) }
         }
 
         public func write<T: Sendable>(
             _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
         ) async throws(PostgreSQL.Error) -> T {
-            try await typed { () async throws in try await run(begin: "BEGIN", end: "COMMIT", body) }
+            try await typed { try await run(begin: "BEGIN", end: "COMMIT", body) }
         }
 
         public func write<T: Sendable>(
             isolation: PostgreSQL.Isolation,
             _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
         ) async throws(PostgreSQL.Error) -> T {
-            try await typed { () async throws in try await run(begin: isolation.begin, end: "COMMIT", body) }
+            try await typed { try await run(begin: isolation.begin, end: "COMMIT", body) }
         }
 
         public func writeWithoutTransaction<T: Sendable>(
             _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
         ) async throws(PostgreSQL.Error) -> T {
-            try await typed { () async throws in try await run(begin: nil, end: nil, body) }
+            try await typed { try await run(begin: nil, end: nil, body) }
         }
 
         private func typed<T>(_ operation: () async throws -> T) async throws(PostgreSQL.Error) -> T {
@@ -163,21 +116,19 @@ public import PostgreSQL_SQL
         }
     }
 
-    // MARK: - Closures that throw ISO_9075.Error: the call-level interface
-
     extension PostgreSQL.Database {
         @_disfavoredOverload
         public func read<Value: Sendable>(
             _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
         ) async throws(ISO_9075.Error) -> Value {
-            try await interface { () async throws in try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body) }
+            try await interface { try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body) }
         }
 
         @_disfavoredOverload
         public func write<Value: Sendable>(
             _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
         ) async throws(ISO_9075.Error) -> Value {
-            try await interface { () async throws in try await run(begin: "BEGIN", end: "COMMIT", body) }
+            try await interface { try await run(begin: "BEGIN", end: "COMMIT", body) }
         }
 
         @_disfavoredOverload
@@ -185,28 +136,28 @@ public import PostgreSQL_SQL
             isolation: PostgreSQL.Isolation,
             _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
         ) async throws(ISO_9075.Error) -> Value {
-            try await interface { () async throws in try await run(begin: isolation.begin, end: "COMMIT", body) }
+            try await interface { try await run(begin: isolation.begin, end: "COMMIT", body) }
         }
 
         /// Runs `body` in a transaction that is always rolled back.
         public func withRollback<Value: Sendable>(
             _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
         ) async throws(ISO_9075.Error) -> Value {
-            try await interface { () async throws in try await run(begin: "BEGIN", end: "ROLLBACK", body) }
+            try await interface { try await run(begin: "BEGIN", end: "ROLLBACK", body) }
         }
 
         @_disfavoredOverload
         public func writeWithoutTransaction<Value: Sendable>(
             _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
         ) async throws(ISO_9075.Error) -> Value {
-            try await interface { () async throws in try await run(begin: nil, end: nil, body) }
+            try await interface { try await run(begin: nil, end: nil, body) }
         }
 
         @_disfavoredOverload
         public func read<Value: Sendable, Thrown: Swift.Error>(
             _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
         ) async throws(ISO_9075.Failure<Thrown>) -> Value {
-            try await separating(Thrown.self) { () async throws in
+            try await separating(Thrown.self) {
                 try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
             }
         }
@@ -215,7 +166,7 @@ public import PostgreSQL_SQL
         public func write<Value: Sendable, Thrown: Swift.Error>(
             _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
         ) async throws(ISO_9075.Failure<Thrown>) -> Value {
-            try await separating(Thrown.self) { () async throws in
+            try await separating(Thrown.self) {
                 try await run(begin: "BEGIN", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
             }
         }
@@ -224,7 +175,7 @@ public import PostgreSQL_SQL
         public func withRollback<Value: Sendable, Thrown: Swift.Error>(
             _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
         ) async throws(ISO_9075.Failure<Thrown>) -> Value {
-            try await separating(Thrown.self) { () async throws in
+            try await separating(Thrown.self) {
                 try await run(begin: "BEGIN", end: "ROLLBACK") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
             }
         }
@@ -256,8 +207,6 @@ public import PostgreSQL_SQL
             }
         }
     }
-
-    // MARK: - Running a closure on a leased connection
 
     extension PostgreSQL.Database {
         /// Leases a connection, opens `begin`, runs `body` on one of the database's threads, and ends with `end`; rolls
@@ -332,28 +281,6 @@ public import PostgreSQL_SQL
         }
     }
 
-    /// What a caller's closure threw, carried unchanged through a transaction, which rolls back on it.
-    struct Raised<Thrown: Swift.Error>: Swift.Error {
-        let thrown: Thrown
-
-        static func raising<T>(_ body: () throws(Thrown) -> T) throws(Raised) -> T {
-            do {
-                return try body()
-            } catch {
-                throw Raised(thrown: error)
-            }
-        }
-    }
-
-    /// Whether the task that leased a connection has been cancelled, for the thread that runs its closure.
-    final class Cancellation: Sendable {
-        private let cancelled = Atomic<Bool>(false)
-
-        var isCancelled: Bool { cancelled.load(ordering: .acquiring) }
-
-        func cancel() { cancelled.store(true, ordering: .releasing) }
-    }
-
     extension PostgreSQL.Database.Engine {
         /// Runs `body` with a connection from the pool, waiting at most the configured acquire timeout for one. The
         /// engine's errors come out as ``PostgreSQL/Error``; what `body` throws comes out unchanged.
@@ -362,6 +289,7 @@ public import PostgreSQL_SQL
         ) async throws -> T {
             let acquired = Atomic<Bool>(false)
             let timeout = configuration.acquireTimeout
+            let clock = clock
             let client = client
             return try await withThrowingTaskGroup(of: T?.self) { group in
                 group.addTask {
@@ -392,9 +320,7 @@ public import PostgreSQL_SQL
                     }
                 }
                 group.addTask {
-                    // Cancelled, the timer stands down: the call itself then ends as cancelled, or with its result if
-                    // it already holds a connection.
-                    do { try await Task.sleep(for: timeout) } catch { return nil }
+                    do { try await clock.sleep(for: timeout) } catch { return nil }
                     guard acquired.load(ordering: .acquiring) else {
                         throw PostgreSQL.Error(kind: .timeout, message: "no connection came free in \(timeout)")
                     }
@@ -410,10 +336,11 @@ public import PostgreSQL_SQL
     }
 
     extension PostgreSQL.Database.Engine {
-        /// Why a connection can't be opened right now, found by opening one outside the pool; `nil` when it opens.
+        /// Why a connection can't be opened right now, found by opening one outside the pool; `nil` when it opens. A
+        /// configuration the engine can't connect with, such as an unreadable root certificate, is that reason too.
         func connectFailure() async -> PostgreSQL.Error? {
             do {
-                let connection = try await PostgresConnection.connect(configuration: probe, id: 0, logger: logger)
+                let connection = try await PostgresConnection.connect(configuration: try configuration.connection(), id: 0, logger: logger)
                 try? await connection.close()
                 return nil
             } catch {

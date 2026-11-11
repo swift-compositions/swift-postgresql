@@ -1,4 +1,4 @@
-public import ISO_9075_Foundation
+internal import ISO_9075_Foundation
 public import SQL
 
 extension Table {

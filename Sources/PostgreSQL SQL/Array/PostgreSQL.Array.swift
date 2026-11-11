@@ -1,8 +1,8 @@
-public import Byte
+internal import Byte
 public import ISO_9075_Foundation
-public import RFC_4122
+internal import RFC_4122
 public import SQL
-public import Time
+internal import Time
 
 extension PostgreSQL {
     public struct Array<Element: QueryBindable & QueryDecodable> {
@@ -55,7 +55,7 @@ extension PostgreSQL.Array {
         SQLQueryExpression("ARRAY[]::\(raw: Element.typeName)[]", as: Self.self)
     }
 
-    public static func of<Elements: Sequence>(_ elements: Elements) -> some QueryExpression<Self>
+    public static func of<Elements: Swift.Sequence>(_ elements: Elements) -> some QueryExpression<Self>
     where Elements.Element: QueryExpression, Elements.Element.QueryValue == Element {
         SQLQueryExpression("ARRAY[\(elements.map(\.queryFragment).joined(separator: ", "))]", as: Self.self)
     }

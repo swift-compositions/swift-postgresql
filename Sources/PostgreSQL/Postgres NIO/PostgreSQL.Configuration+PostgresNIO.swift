@@ -1,6 +1,6 @@
-public import PostgreSQL_SQL
 #if PostgresNIO && !os(Windows)
-    package import NIOSSL
+    internal import PostgreSQL_SQL
+    internal import NIOSSL
     package import PostgresNIO
 
     extension PostgreSQL.Configuration {

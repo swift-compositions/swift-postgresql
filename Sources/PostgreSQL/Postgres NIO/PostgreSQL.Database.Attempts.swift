@@ -1,5 +1,5 @@
-public import PostgreSQL_SQL
 #if PostgresNIO && !os(Windows)
+    public import PostgreSQL_SQL
     internal import Logging
     internal import Synchronization
 

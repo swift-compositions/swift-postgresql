@@ -25,11 +25,11 @@ import Testing
 
     @Test func `each syntax names its parser`() throws {
         #expect(
-            try PostgreSQL().render(PostgreSQL.TextSearch.query("a & b", configuration: .simple, syntax: .standard).queryFragment).sql
+            try PostgreSQL().render(PostgreSQL.TextSearch.query("a & b", syntax: .standard, configuration: .simple).queryFragment).sql
                 == "to_tsquery('simple'::regconfig, $1)"
         )
         #expect(
-            try PostgreSQL().render(PostgreSQL.TextSearch.query("a b", configuration: .simple, syntax: .phrase).queryFragment).sql
+            try PostgreSQL().render(PostgreSQL.TextSearch.query("a b", syntax: .phrase, configuration: .simple).queryFragment).sql
                 == "phraseto_tsquery('simple'::regconfig, $1)"
         )
     }
@@ -89,8 +89,8 @@ import Testing
     }
 
     @Test func `queries combine`() throws {
-        let swift = PostgreSQL.TextSearch.query("swift", configuration: .simple, syntax: .plain)
-        let sql = PostgreSQL.TextSearch.query("sql", configuration: .simple, syntax: .plain)
+        let swift = PostgreSQL.TextSearch.query("swift", syntax: .plain, configuration: .simple)
+        let sql = PostgreSQL.TextSearch.query("sql", syntax: .plain, configuration: .simple)
         #expect(
             try PostgreSQL().render(swift.and(sql).queryFragment).sql
                 == "(plainto_tsquery('simple'::regconfig, $1) && plainto_tsquery('simple'::regconfig, $2))"
@@ -106,8 +106,8 @@ import Testing
         let rendering = try PostgreSQL().render(
             document.title.headline(
                 PostgreSQL.TextSearch.query("swift", configuration: .english),
-                configuration: .english,
-                options: PostgreSQL.TextSearch.Headline(startSelection: "<b>", stopSelection: "</b>", maxWords: 20)
+                options: PostgreSQL.TextSearch.Headline(startSelection: "<b>", stopSelection: "</b>", maxWords: 20),
+                configuration: .english
             )
             .queryFragment
         )
@@ -133,8 +133,8 @@ import Testing
         let rendering = try PostgreSQL().render(
             TextSearchFixtures.Document.addSearchVector(
                 "search",
-                configuration: .english,
-                sources: [.init(\.title, weight: .a), .init(\.body, weight: .b)]
+                sources: [.init(\.title, weight: .a), .init(\.body, weight: .b)],
+                configuration: .english
             )
             .query
         )

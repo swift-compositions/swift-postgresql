@@ -4,9 +4,9 @@ public import SQL
 extension Table {
     public static func addSearchVector(
         _ name: String,
-        configuration: PostgreSQL.TextSearch.Configuration,
         sources: [PostgreSQL.TextSearch.Source<Self>],
-        ifNotExists: Bool = false
+        ifNotExists: Bool = false,
+        configuration: PostgreSQL.TextSearch.Configuration
     ) -> SQLQueryExpression<()> {
         precondition(!sources.isEmpty, "a search vector needs at least one source column")
         let vector = sources.map { source -> ISO_9075.Fragment in

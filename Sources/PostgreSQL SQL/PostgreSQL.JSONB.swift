@@ -1,4 +1,4 @@
-public import Byte
+internal import Byte
 internal import Foundation
 public import ISO_9075_Foundation
 public import SQL

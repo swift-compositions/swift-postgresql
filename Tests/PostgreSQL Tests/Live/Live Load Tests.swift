@@ -46,7 +46,7 @@
             let busy = Atomic<Int>(0)
             let peak = Atomic<Int>(0)
             try await withThrowingTaskGroup { group in
-                for writer in 0..<200 {
+                (0..<200).forEach { writer in
                     group.addTask {
                         let measure: @Sendable () -> Void = {
                             let now = busy.add(1, ordering: .relaxed).newValue

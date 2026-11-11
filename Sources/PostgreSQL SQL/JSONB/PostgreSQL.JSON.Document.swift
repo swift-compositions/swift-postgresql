@@ -1,4 +1,4 @@
-public import Byte
+internal import Byte
 
 extension PostgreSQL.JSON {
     public protocol Document {}

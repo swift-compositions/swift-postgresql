@@ -32,8 +32,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.17.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.81.0"),
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.29.0"),
-        .package(url: "https://github.com/pointfreeco/swift-custom-dump.git", from: "1.3.3"),
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.18.4"),
         .package(
             url: "https://github.com/swift-compositions/swift-sql.git",
             branch: "main",
@@ -88,8 +86,6 @@ let package = Package(
                 .product(name: "SQL Test Support", package: "swift-sql"),
                 .product(name: "ISO 9075 Foundation", package: "swift-iso-9075"),
                 .product(name: "ISO 9075 Call-Level Interface", package: "swift-iso-9075"),
-                .product(name: "CustomDump", package: "swift-custom-dump"),
-                .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
             ]
         ),
         .testTarget(
@@ -107,8 +103,6 @@ let package = Package(
                 .product(name: "Byte", package: "swift-byte"),
                 .product(name: "Time", package: "swift-time"),
                 .product(name: "RFC 4122", package: "swift-rfc-4122"),
-                .product(name: "CustomDump", package: "swift-custom-dump"),
-                .product(name: "InlineSnapshotTesting", package: "swift-snapshot-testing"),
                 .product(name: "PostgresNIO", package: "postgres-nio", condition: postgresNIO),
                 .product(name: "NIOPosix", package: "swift-nio", condition: postgresNIO),
                 .product(name: "Logging", package: "swift-log", condition: postgresNIO),

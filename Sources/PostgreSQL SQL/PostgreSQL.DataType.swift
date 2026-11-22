@@ -81,7 +81,7 @@ extension Time.Instant: PostgreSQL.DataType {
     public static var valueKind: ISO.`9075`.Value.Kind { .timestamp }
 }
 
-extension RFC_4122.UUID: PostgreSQL.DataType {
+extension IETF.RFC.`4122`.UUID: PostgreSQL.DataType {
     public static var typeName: String { "UUID" }
 
     public static var valueKind: ISO.`9075`.Value.Kind { .uuid }

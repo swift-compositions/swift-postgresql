@@ -10,7 +10,7 @@ enum NotificationFixtures {
         let id: Int
         var title: String
         var happenedAt: Time.Instant
-        var reference: RFC_4122.UUID?
+        var reference: IETF.RFC.`4122`.UUID?
         var payload: [Byte]
         var isPublic: Bool
         var weight: Double?

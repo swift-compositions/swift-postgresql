@@ -5,8 +5,8 @@ import SQL_Macros
 enum UUIDFixtures {
     @Table("users")
     struct User {
-        let id: RFC_4122.UUID
+        let id: IETF.RFC.`4122`.UUID
         let name: String
-        let referrerID: RFC_4122.UUID?
+        let referrerID: IETF.RFC.`4122`.UUID?
     }
 }

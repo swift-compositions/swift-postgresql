@@ -90,7 +90,7 @@ import Time
                         id: 1,
                         title: "Launch",
                         happenedAt: try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 250_000_000),
-                        reference: try RFC_4122.UUID("0190b8a4-8a4e-7d2e-9f1c-3b2a1d0e4f5a"),
+                        reference: try IETF.RFC.`4122`.UUID("0190b8a4-8a4e-7d2e-9f1c-3b2a1d0e4f5a"),
                         payload: [Byte(bitPattern: 0x01), Byte(bitPattern: 0xFF)],
                         isPublic: true,
                         weight: nil

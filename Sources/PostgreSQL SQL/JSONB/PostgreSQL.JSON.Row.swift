@@ -75,10 +75,10 @@ extension PostgreSQL.JSON {
             }
         }
 
-        public mutating func decode(_ columnType: RFC_4122.UUID.Type) throws(QueryDecodingError) -> RFC_4122.UUID? {
+        public mutating func decode(_ columnType: IETF.RFC.`4122`.UUID.Type) throws(QueryDecodingError) -> IETF.RFC.`4122`.UUID? {
             guard let text = try next({ $0 as? String }) else { return nil }
             do {
-                return try RFC_4122.UUID(text)
+                return try IETF.RFC.`4122`.UUID(text)
             } catch {
                 throw .dataCorrupted("\(text) as a UUID")
             }

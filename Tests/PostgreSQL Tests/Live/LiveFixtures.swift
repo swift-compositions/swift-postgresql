@@ -17,7 +17,7 @@
             var name: String
             var bytes: [Byte]
             var createdAt: Time.Instant
-            var reference: RFC_4122.UUID
+            var reference: IETF.RFC.`4122`.UUID
             @Column(as: PostgreSQL.JSONB<[String: Int]>.self)
             var settings: [String: Int]
             @Column(as: PostgreSQL.Array<String>.self)
@@ -75,7 +75,7 @@
                 name: name,
                 bytes: [0x00, 0x7F, 0xFF].map(Byte.init(bitPattern:)),
                 createdAt: try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 123_456_000),
-                reference: try RFC_4122.UUID("0190b8a4-8a4e-7d2e-9f1c-3b2a1d0e4f5a"),
+                reference: try IETF.RFC.`4122`.UUID("0190b8a4-8a4e-7d2e-9f1c-3b2a1d0e4f5a"),
                 settings: ["volume": 7],
                 tags: ["a", "b,c", #"d"e"#],
                 note: nil

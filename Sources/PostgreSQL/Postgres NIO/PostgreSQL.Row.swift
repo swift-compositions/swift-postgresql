@@ -36,7 +36,7 @@
                 case .numeric: .decimal(try decoded(Decimal.self).description)
                 case .bytea: .blob(try decoded(ByteBuffer.self).readableBytesView.map(Byte.init(bitPattern:)))
                 case .timestamp, .timestamptz, .date: .timestamp(try decoded(PostgresInstant.self).instant)
-                case .uuid: .uuid(RFC_4122.UUID(bytes: try decoded(Foundation.UUID.self).uuid))
+                case .uuid: .uuid(IETF.RFC.`4122`.UUID(bytes: try decoded(Foundation.UUID.self).uuid))
                 case .json, .jsonb: .json(try decoded(String.self).utf8.map(Byte.init(bitPattern:)))
                 case .boolArray, .int2Array, .int4Array, .int8Array, .float4Array, .float8Array, .textArray, .varcharArray,
                     .bpcharArray, .nameArray, .uuidArray, .timestampArray, .timestamptzArray, .dateArray:

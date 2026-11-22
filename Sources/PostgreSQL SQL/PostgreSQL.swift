@@ -52,7 +52,7 @@ extension PostgreSQL {
         case .text: String.typeName
         case .blob: [Byte].typeName
         case .timestamp: Time.Instant.typeName
-        case .uuid: RFC_4122.UUID.typeName
+        case .uuid: IETF.RFC.`4122`.UUID.typeName
         case .decimal: "NUMERIC"
         case .json: "JSONB"
         }

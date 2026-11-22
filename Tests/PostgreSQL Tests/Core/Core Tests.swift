@@ -31,7 +31,7 @@ enum CoreFixtures {
         mutating func decode(_ columnType: String.Type) throws(QueryDecodingError) -> String? { text }
         mutating func decode(_ columnType: Bool.Type) throws(QueryDecodingError) -> Bool? { text.map { $0 == "t" } }
         mutating func decode(_ columnType: Time.Instant.Type) throws(QueryDecodingError) -> Time.Instant? { nil }
-        mutating func decode(_ columnType: RFC_4122.UUID.Type) throws(QueryDecodingError) -> RFC_4122.UUID? { nil }
+        mutating func decode(_ columnType: IETF.RFC.`4122`.UUID.Type) throws(QueryDecodingError) -> IETF.RFC.`4122`.UUID? { nil }
     }
 }
 
@@ -87,7 +87,7 @@ enum CoreFixtures {
         #expect(String.typeName == "TEXT")
         #expect([Byte].typeName == "BYTEA")
         #expect(Time.Instant.typeName == "TIMESTAMPTZ")
-        #expect(RFC_4122.UUID.typeName == "UUID")
+        #expect(IETF.RFC.`4122`.UUID.typeName == "UUID")
         #expect(Optional<Int>.typeName == "BIGINT")
     }
 
@@ -110,7 +110,7 @@ enum CoreFixtures {
 
     @Test func `bind empty with their element kind`() throws {
         #expect(try PostgreSQL().render(PostgreSQL.Array<Int>([]).queryFragment) == ISO.`9075`.Rendering(sql: "$1", values: [.array([], of: .int)]))
-        #expect(PostgreSQL.Array<RFC_4122.UUID>([]).queryBinding == .array([], of: .uuid))
+        #expect(PostgreSQL.Array<IETF.RFC.`4122`.UUID>([]).queryBinding == .array([], of: .uuid))
     }
 
     @Test func `inline empty with their element type`() throws {

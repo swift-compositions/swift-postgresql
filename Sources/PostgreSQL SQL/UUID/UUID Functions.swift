@@ -3,7 +3,7 @@ public import RFC_4122
 public import SQL
 public import Time
 
-extension QueryExpression where QueryValue: _OptionalPromotable<RFC_4122.UUID?> {
+extension QueryExpression where QueryValue: _OptionalPromotable<IETF.RFC.`4122`.UUID?> {
     public func extractVersion() -> some QueryExpression<Int?> {
         SQLQueryExpression("uuid_extract_version(\(self))", as: Int?.self)
     }

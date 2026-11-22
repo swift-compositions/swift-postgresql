@@ -97,12 +97,12 @@ extension PostgreSQL.JSON {
         return object
     }
 
-    static func instant(_ text: String) throws(ISO_9075.Value.Failure) -> Time.Instant {
+    static func instant(_ text: String) throws(ISO.`9075`.Value.Failure) -> Time.Instant {
         let time = text.firstIndex(of: "T").map { text[$0...] } ?? text[text.endIndex...]
         let sign = time.lastIndex { $0 == "+" || $0 == "-" }
         let local = sign.map { text[..<$0] } ?? text[...]
-        let offset = try sign.map { index throws(ISO_9075.Value.Failure) in try offsetSeconds(text[index...]) } ?? 0
-        let instant = try ISO_9075.Literal.instant(local.contains("T") ? String(local) : local + "T00:00:00")
+        let offset = try sign.map { index throws(ISO.`9075`.Value.Failure) in try offsetSeconds(text[index...]) } ?? 0
+        let instant = try ISO.`9075`.Literal.instant(local.contains("T") ? String(local) : local + "T00:00:00")
         return Time.Instant(
             _unchecked: (),
             secondsSinceUnixEpoch: instant.secondsSinceUnixEpoch - offset,
@@ -110,10 +110,10 @@ extension PostgreSQL.JSON {
         )
     }
 
-    private static func offsetSeconds(_ offset: Substring) throws(ISO_9075.Value.Failure) -> Int64 {
+    private static func offsetSeconds(_ offset: Substring) throws(ISO.`9075`.Value.Failure) -> Int64 {
         let fields: [Int?] = offset.dropFirst().split(separator: ":").map { Int($0) }
         guard (1...2).contains(fields.count), let hours = fields[0], let minutes = fields.count == 2 ? fields[1] : 0 else {
-            throw ISO_9075.Value.Failure("\(offset) is not a time zone offset")
+            throw ISO.`9075`.Value.Failure("\(offset) is not a time zone offset")
         }
         let seconds = Int64(hours) * 3_600 + Int64(minutes) * 60
         return offset.first == "-" ? -seconds : seconds

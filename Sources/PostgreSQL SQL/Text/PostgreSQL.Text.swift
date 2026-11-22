@@ -14,7 +14,7 @@ extension PostgreSQL.Text {
         separator: some QueryExpression<String>,
         _ values: repeat each Value
     ) -> some QueryExpression<String> {
-        var arguments: [ISO_9075.Fragment] = [separator.queryFragment]
+        var arguments: [ISO.`9075`.Fragment] = [separator.queryFragment]
         for value in repeat each values {
             arguments.append(value.queryFragment)
         }
@@ -26,7 +26,7 @@ extension PostgreSQL.Text {
         _ template: some QueryExpression<String>,
         _ arguments: repeat each Argument
     ) -> some QueryExpression<String> {
-        var fragments: [ISO_9075.Fragment] = [template.queryFragment]
+        var fragments: [ISO.`9075`.Fragment] = [template.queryFragment]
         for argument in repeat each arguments {
             fragments.append(argument.queryFragment)
         }

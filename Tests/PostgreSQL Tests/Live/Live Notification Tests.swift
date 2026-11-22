@@ -15,8 +15,8 @@
         @Test func `a typed stream receives a notification`() async throws {
             let channel = PostgreSQL.Notification.Channel("greetings")
             let database = database
-            let received = try await database.listen(on: channel) { stream throws(ISO_9075.Error) in
-                try await database.write { connection throws(ISO_9075.Error) in
+            let received = try await database.listen(on: channel) { stream throws(ISO.`9075`.Error) in
+                try await database.write { connection throws(ISO.`9075`.Error) in
                     try channel.notify("hello").execute(connection)
                 }
                 var iterator = stream.makeAsyncIterator()
@@ -28,13 +28,13 @@
         @Test func `a trigger notifies each change with its rows`() async throws {
             let channel = PostgreSQL.Notification.Channel<PostgreSQL.Notification.Change<Account>>(changes: "account_changes")
             let database = database
-            try await database.write { connection throws(ISO_9075.Error) in
+            try await database.write { connection throws(ISO.`9075`.Error) in
                 for statement in channel.setUp(on: Account.self, includingOld: true) {
                     try statement.execute(connection)
                 }
             }
-            let changes = try await database.listen(on: channel) { stream throws(ISO_9075.Error) in
-                try await database.write { connection throws(ISO_9075.Error) in
+            let changes = try await database.listen(on: channel) { stream throws(ISO.`9075`.Error) in
+                try await database.write { connection throws(ISO.`9075`.Error) in
                     try Account.insert { Account(id: 1, owner: "ada", balance: 1) }.execute(connection)
                     try Account.where { $0.id.eq(1) }.update { $0.balance = 2 }.execute(connection)
                     try Account.where { $0.id.eq(1) }.delete().execute(connection)
@@ -57,7 +57,7 @@
                     PostgreSQL.Notification.Change(operation: .delete, new: nil, old: Account(id: 1, owner: "ada", balance: 2)),
                 ]
             )
-            try await database.write { connection throws(ISO_9075.Error) in
+            try await database.write { connection throws(ISO.`9075`.Error) in
                 for statement in channel.tearDown(on: Account.self) {
                     try statement.execute(connection)
                 }
@@ -68,8 +68,8 @@
             let channel = PostgreSQL.Notification.Channel<PostgreSQL.Notification.Change<Account>>(changes: "manual_changes")
             let database = database
             let change = PostgreSQL.Notification.Change(operation: .insert, new: Account(id: 9, owner: "zed", balance: 4), old: nil)
-            let received = try await database.listen(on: channel) { stream throws(ISO_9075.Error) in
-                try await database.write { connection throws(ISO_9075.Error) in
+            let received = try await database.listen(on: channel) { stream throws(ISO.`9075`.Error) in
+                try await database.write { connection throws(ISO.`9075`.Error) in
                     try channel.notify(change).execute(connection)
                 }
                 var iterator = stream.makeAsyncIterator()

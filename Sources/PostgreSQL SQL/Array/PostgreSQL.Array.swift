@@ -35,7 +35,7 @@ extension PostgreSQL.Array: QueryRepresentable {
 }
 
 extension PostgreSQL.Array: QueryExpression, QueryBindable where Element: PostgreSQL.DataType {
-    public var queryBinding: ISO_9075.Value {
+    public var queryBinding: ISO.`9075`.Value {
         .array(elements.map { Element(queryOutput: $0).queryBinding }, of: Element.valueKind)
     }
 }
@@ -173,7 +173,7 @@ extension PostgreSQL.Array.Field {
         mutating func decode(_ columnType: Time.Instant.Type) throws(QueryDecodingError) -> Time.Instant? {
             guard let text = text() else { return nil }
             do {
-                return try ISO_9075.Literal.instant(text)
+                return try ISO.`9075`.Literal.instant(text)
             } catch {
                 throw .dataCorrupted("\(text) as a timestamp")
             }

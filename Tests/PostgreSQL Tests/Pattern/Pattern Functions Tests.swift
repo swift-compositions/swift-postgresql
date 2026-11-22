@@ -10,7 +10,7 @@ import Testing
     @Test func `ilike binds the pattern`() throws {
         #expect(
             try PostgreSQL().render(title.ilike("a%").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("documents"."title" ILIKE $1)"#,
                     values: [.text("a%")]
                 )
@@ -20,7 +20,7 @@ import Testing
     @Test func `ilike binds an escape character`() throws {
         #expect(
             try PostgreSQL().render(title.ilike("50\\%", escape: "\\").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("documents"."title" ILIKE $1 ESCAPE $2)"#,
                     values: [.text("50\\%"), .text("\\")]
                 )
@@ -30,7 +30,7 @@ import Testing
     @Test func `similar to and not similar to`() throws {
         #expect(
             try PostgreSQL().render(title.similarTo("%(b|d)%").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("documents"."title" SIMILAR TO $1)"#,
                     values: [.text("%(b|d)%")]
                 )
@@ -41,7 +41,7 @@ import Testing
     @Test func `regex operators`() throws {
         #expect(
             try PostgreSQL().render(title.regexMatch("^A").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("documents"."title" ~ $1)"#,
                     values: [.text("^A")]
                 )
@@ -54,7 +54,7 @@ import Testing
     @Test func `regexp_like with flags`() throws {
         #expect(
             try PostgreSQL().render(title.regexpLike("^a", flags: "i").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"regexp_like("documents"."title", $1, $2)"#,
                     values: [.text("^a"), .text("i")]
                 )
@@ -66,7 +66,7 @@ import Testing
         #expect(try PostgreSQL().render(title.regexpCount("a", start: 3).queryFragment).sql == #"regexp_count("documents"."title", $1, 3)"#)
         #expect(
             try PostgreSQL().render(title.regexpCount("a", flags: "i").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"regexp_count("documents"."title", $1, 1, $2)"#,
                     values: [.text("a"), .text("i")]
                 )
@@ -82,7 +82,7 @@ import Testing
         #expect(try PostgreSQL().render(title.regexpReplace("a", "b").queryFragment).sql == #"regexp_replace("documents"."title", $1, $2)"#)
         #expect(
             try PostgreSQL().render(title.regexpReplace("a", "b", flags: "g").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"regexp_replace("documents"."title", $1, $2, $3)"#,
                     values: [.text("a"), .text("b"), .text("g")]
                 )

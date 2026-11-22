@@ -46,21 +46,21 @@ import Testing
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.arrayLength().gt(5).queryFragment)
-                == ISO_9075.Rendering(sql: #"(jsonb_array_length("users"."settings")) > ($1)"#, values: [.int(5)])
+                == ISO.`9075`.Rendering(sql: #"(jsonb_array_length("users"."settings")) > ($1)"#, values: [.int(5)])
         )
     }
 
     @Test func `path extraction functions bind a variadic text array`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.extractPath(["a", "b"]).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"jsonb_extract_path("users"."settings", VARIADIC $1::text[])"#,
                     values: [.array([.text("a"), .text("b")], of: .text)]
                 )
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.extractPathText(["a"], format: .json).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"json_extract_path_text("users"."settings", VARIADIC $1::text[])"#,
                     values: [.array([.text("a")], of: .text)]
                 )
@@ -70,11 +70,11 @@ import Testing
     @Test func `jsonpath functions cast the bound path`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.pathExists("$.theme").queryFragment)
-                == ISO_9075.Rendering(sql: #"jsonb_path_exists("users"."settings", $1::jsonpath)"#, values: [.text("$.theme")])
+                == ISO.`9075`.Rendering(sql: #"jsonb_path_exists("users"."settings", $1::jsonpath)"#, values: [.text("$.theme")])
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.pathQuery("$.items[*]").queryFragment)
-                == ISO_9075.Rendering(sql: #"jsonb_path_query("users"."settings", $1::jsonpath)"#, values: [.text("$.items[*]")])
+                == ISO.`9075`.Rendering(sql: #"jsonb_path_query("users"."settings", $1::jsonpath)"#, values: [.text("$.items[*]")])
         )
     }
 
@@ -155,7 +155,7 @@ import Testing
                 PostgreSQL.JSON.buildObject(("name", JSONBFixtures.User.columns.name), ("id", JSONBFixtures.User.columns.id))
                     .queryFragment
             )
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"jsonb_build_object($1, "users"."name", $2, "users"."id")"#,
                     values: [.text("name"), .text("id")]
                 )
@@ -173,7 +173,7 @@ import Testing
                 PostgreSQL.JSON.object(keys: ["name", "email"], values: ["Alice", "alice@example.com"], format: .json)
                     .queryFragment
             )
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "json_object($1::text[], $2::text[])",
                     values: [
                         .array([.text("name"), .text("email")], of: .text),

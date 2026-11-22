@@ -16,7 +16,7 @@ import Time
     @Test func `v7 inlines the shift as an escaped interval literal`() throws {
         #expect(
             try PostgreSQL().render(PostgreSQL.UUID.v7(shift: "-1 hour").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "uuidv7('-1 hour'::interval)",
                     values: []
                 )

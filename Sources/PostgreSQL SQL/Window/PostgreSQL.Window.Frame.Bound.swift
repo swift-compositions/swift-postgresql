@@ -8,7 +8,7 @@ extension PostgreSQL.Window.Frame {
         case following(Int)
         case unboundedFollowing
 
-        var queryFragment: ISO_9075.Fragment {
+        var queryFragment: ISO.`9075`.Fragment {
             switch self {
             case .unboundedPreceding: "UNBOUNDED PRECEDING"
             case .preceding(let offset): Self.offset(offset, "PRECEDING")
@@ -18,7 +18,7 @@ extension PostgreSQL.Window.Frame {
             }
         }
 
-        private static func offset(_ offset: Int, _ direction: String) -> ISO_9075.Fragment {
+        private static func offset(_ offset: Int, _ direction: String) -> ISO.`9075`.Fragment {
             precondition(offset >= 0, "a \(direction) offset must not be negative, got \(offset)")
             return "\(raw: offset) \(raw: direction)"
         }

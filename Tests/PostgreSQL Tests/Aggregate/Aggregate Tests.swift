@@ -7,7 +7,7 @@ import Testing
 @Suite struct `Aggregate array_agg` {
     @Test func `array_agg aggregates the expression`() throws {
         let rendering = try PostgreSQL().render(AggregateFixtures.Customer.columns.name.arrayAgg().queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: #"array_agg("customers"."name")"#, values: []))
+        #expect(rendering == ISO.`9075`.Rendering(sql: #"array_agg("customers"."name")"#, values: []))
     }
 
     @Test func `distinct and order render inside the call`() throws {
@@ -48,7 +48,7 @@ import Testing
 @Suite struct `Aggregate string_agg` {
     @Test func `string_agg binds the separator`() throws {
         let rendering = try PostgreSQL().render(AggregateFixtures.Customer.columns.name.stringAgg(", ").queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: #"string_agg("customers"."name", $1)"#, values: [.text(", ")]))
+        #expect(rendering == ISO.`9075`.Rendering(sql: #"string_agg("customers"."name", $1)"#, values: [.text(", ")]))
     }
 
     @Test func `the separator defaults to a comma`() throws {
@@ -66,7 +66,7 @@ import Testing
         let rendering = try PostgreSQL().render(AggregateFixtures.Customer.columns.id.stringAgg().queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"string_agg(CAST("customers"."id" AS TEXT), $1)"#,
                     values: [.text(",")]
                 )
@@ -124,7 +124,7 @@ import Testing
         let rendering = try PostgreSQL().render(purchase.amount.percentileCont(0.5).queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"percentile_cont($1) WITHIN GROUP (ORDER BY "purchases"."amount")"#,
                     values: [.double(0.5)]
                 )

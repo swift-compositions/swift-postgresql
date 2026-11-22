@@ -9,7 +9,7 @@ import Testing
         let rendering = try PostgreSQL().render(PostgreSQL.Function("touch").create(body: "BEGIN RETURN NEW; END;").query)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "CREATE OR REPLACE FUNCTION \"touch\"() RETURNS trigger LANGUAGE plpgsql AS $function$\nBEGIN RETURN NEW; END;\n$function$",
                     values: []
                 )

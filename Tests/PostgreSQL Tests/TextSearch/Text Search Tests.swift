@@ -9,14 +9,14 @@ import Testing
 
     @Test func `a vector inlines its configuration`() throws {
         let rendering = try PostgreSQL().render(PostgreSQL.TextSearch.vector(document.title, configuration: .english).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: #"to_tsvector('english'::regconfig, "documents"."title")"#, values: []))
+        #expect(rendering == ISO.`9075`.Rendering(sql: #"to_tsvector('english'::regconfig, "documents"."title")"#, values: []))
     }
 
     @Test func `a query binds its text and defaults to web syntax`() throws {
         let rendering = try PostgreSQL().render(PostgreSQL.TextSearch.query("swift sql", configuration: .english).queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "websearch_to_tsquery('english'::regconfig, $1)",
                     values: [.text("swift sql")]
                 )
@@ -44,7 +44,7 @@ import Testing
     @Test func `bound vectors and queries are cast`() throws {
         #expect(
             try PostgreSQL().render(PostgreSQL.TextSearch.Vector("a:1").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "CAST($1 AS TSVECTOR)",
                     values: [.text("a:1")]
                 )
@@ -113,7 +113,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"ts_headline('english'::regconfig, "documents"."title", websearch_to_tsquery('english'::regconfig, $1), $2)"#,
                     values: [.text("swift"), .text(#"StartSel="<b>", StopSel="</b>", MaxWords=20"#)]
                 )
@@ -140,7 +140,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql:
                         #"ALTER TABLE "documents" ADD COLUMN "search" TSVECTOR GENERATED ALWAYS AS (setweight(to_tsvector('english'::regconfig, coalesce("title", '')), 'A') || setweight(to_tsvector('english'::regconfig, coalesce("body", '')), 'B')) STORED"#,
                     values: []

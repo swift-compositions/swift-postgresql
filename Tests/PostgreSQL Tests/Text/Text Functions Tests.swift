@@ -9,7 +9,7 @@ import Testing
     let nickname = TextFixtures.Person.columns.nickname
 
     @Test func `initcap wraps the column`() throws {
-        #expect(try PostgreSQL().render(name.initcap().queryFragment) == ISO_9075.Rendering(sql: #"initcap("people"."name")"#, values: []))
+        #expect(try PostgreSQL().render(name.initcap().queryFragment) == ISO.`9075`.Rendering(sql: #"initcap("people"."name")"#, values: []))
     }
 
     @Test func `initcap keeps an optional column optional`() throws {
@@ -27,7 +27,7 @@ import Testing
     @Test func `lpad inlines the length and binds the fill`() throws {
         #expect(
             try PostgreSQL().render(name.lpad(to: 10, with: "*").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"lpad("people"."name", 10, $1)"#,
                     values: [.text("*")]
                 )
@@ -37,7 +37,7 @@ import Testing
     @Test func `rpad fills with a space by default`() throws {
         #expect(
             try PostgreSQL().render(name.rpad(to: 5).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"rpad("people"."name", 5, $1)"#,
                     values: [.text(" ")]
                 )
@@ -52,7 +52,7 @@ import Testing
     @Test func `split_part binds the delimiter`() throws {
         #expect(
             try PostgreSQL().render(name.splitPart(delimiter: "-", field: 2).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"split_part("people"."name", $1, 2)"#,
                     values: [.text("-")]
                 )
@@ -62,7 +62,7 @@ import Testing
     @Test func `position renders the IN form`() throws {
         #expect(
             try PostgreSQL().render(name.position(of: "an").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"position($1 IN "people"."name")"#,
                     values: [.text("an")]
                 )
@@ -72,7 +72,7 @@ import Testing
     @Test func `starts_with binds the prefix`() throws {
         #expect(
             try PostgreSQL().render(name.startsWith("Al").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"starts_with("people"."name", $1)"#,
                     values: [.text("Al")]
                 )
@@ -82,7 +82,7 @@ import Testing
     @Test func `translate binds both character sets`() throws {
         #expect(
             try PostgreSQL().render(name.translate(from: "ab", to: "xy").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"translate("people"."name", $1, $2)"#,
                     values: [.text("ab"), .text("xy")]
                 )
@@ -92,7 +92,7 @@ import Testing
     @Test func `overlay with and without a length`() throws {
         #expect(
             try PostgreSQL().render(name.overlay(placing: "xx", from: 2, for: 3).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"overlay("people"."name" PLACING $1 FROM 2 FOR 3)"#,
                     values: [.text("xx")]
                 )
@@ -117,13 +117,13 @@ import Testing
     }
 
     @Test func `chr inlines the code`() throws {
-        #expect(try PostgreSQL().render(PostgreSQL.Text.chr(65).queryFragment) == ISO_9075.Rendering(sql: "chr(65)", values: []))
+        #expect(try PostgreSQL().render(PostgreSQL.Text.chr(65).queryFragment) == ISO.`9075`.Rendering(sql: "chr(65)", values: []))
     }
 
     @Test func `concat_ws binds the separator and lists the values`() throws {
         #expect(
             try PostgreSQL().render(PostgreSQL.Text.concatenate(separator: ", ", name, nickname).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"concat_ws($1, "people"."name", "people"."nickname")"#,
                     values: [.text(", ")]
                 )
@@ -133,7 +133,7 @@ import Testing
     @Test func `format binds the template and lists the arguments`() throws {
         #expect(
             try PostgreSQL().render(PostgreSQL.Text.format("Hello %s, %s", name, 42).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"format($1, "people"."name", $2)"#,
                     values: [.text("Hello %s, %s"), .int(42)]
                 )

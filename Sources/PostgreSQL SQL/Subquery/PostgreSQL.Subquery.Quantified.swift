@@ -4,14 +4,14 @@ public import SQL
 extension PostgreSQL.Subquery {
     public struct Quantified<Value>: Sendable {
         public let quantifier: Quantifier
-        let source: ISO_9075.Fragment
+        let source: ISO.`9075`.Fragment
 
-        init(_ quantifier: Quantifier, _ source: ISO_9075.Fragment) {
+        init(_ quantifier: Quantifier, _ source: ISO.`9075`.Fragment) {
             self.quantifier = quantifier
             self.source = source
         }
 
-        var queryFragment: ISO_9075.Fragment {
+        var queryFragment: ISO.`9075`.Fragment {
             "\(raw: quantifier.rawValue) (\(source))"
         }
     }

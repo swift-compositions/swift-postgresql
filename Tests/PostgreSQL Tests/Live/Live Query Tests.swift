@@ -16,7 +16,7 @@
         var database: PostgreSQL.Database { PostgreSQL.TestDatabase.database }
 
         @Test func `window functions rank within partitions`() async throws {
-            let ranks = try await database.read { connection throws(ISO_9075.Error) in
+            let ranks = try await database.read { connection throws(ISO.`9075`.Error) in
                 try Score
                     .select { ($0.player, $0.points, PostgreSQL.Window.rank().over { $0.partition(by: Score.columns.player).order(by: Score.columns.points.desc()) }) }
                     .order { $0.player }
@@ -27,7 +27,7 @@
         }
 
         @Test func `a named window is shared by functions`() async throws {
-            let rows = try await database.read { connection throws(ISO_9075.Error) in
+            let rows = try await database.read { connection throws(ISO.`9075`.Error) in
                 try Score
                     .select { ($0.points, PostgreSQL.Window.rowNumber().over("by_points")) }
                     .window("by_points") { $0.order(by: Score.columns.points) }
@@ -38,7 +38,7 @@
         }
 
         @Test func `a running sum uses a frame`() async throws {
-            let sums = try await database.read { connection throws(ISO_9075.Error) in
+            let sums = try await database.read { connection throws(ISO.`9075`.Error) in
                 try Score
                     .select { PostgreSQL.Window.Function(aggregate: $0.points.sum()).over { $0.order(by: Score.columns.points).rows(between: .unboundedPreceding, and: .currentRow) } }
                     .order(by: \.points)
@@ -48,7 +48,7 @@
         }
 
         @Test func `aggregates group and round`() async throws {
-            let (agg, deviation, rounded) = try await database.read { connection throws(ISO_9075.Error) in
+            let (agg, deviation, rounded) = try await database.read { connection throws(ISO.`9075`.Error) in
                 (
                     try Score.group(by: \.player).select { ($0.player, $0.points.arrayAgg(order: $0.points.asc()), $0.points.stringAgg("-", order: $0.points.asc())) }
                         .order(by: \.player)
@@ -65,7 +65,7 @@
         }
 
         @Test func `full-text search matches and ranks`() async throws {
-            let titles = try await database.read { connection throws(ISO_9075.Error) in
+            let titles = try await database.read { connection throws(ISO.`9075`.Error) in
                 try Article
                     .where { $0.body.matches(PostgreSQL.TextSearch.query("swift databases", configuration: .english), configuration: .english) }
                     .select { ($0.title, PostgreSQL.TextSearch.vector($0.body, configuration: .english).rank(PostgreSQL.TextSearch.query("swift", configuration: .english))) }
@@ -78,7 +78,7 @@
 
         @Test func `JSONB operators read and edit documents`() async throws {
             let draft = try LiveFixtures.sample("json")
-            let (volume, hasVolume, contained, edited) = try await database.write { connection throws(ISO_9075.Error) in
+            let (volume, hasVolume, contained, edited) = try await database.write { connection throws(ISO.`9075`.Error) in
                 try Sample.insert { draft }.execute(connection)
                 let sample = Sample.where { $0.name.eq("json") }
                 return (
@@ -96,7 +96,7 @@
     }
 
     enum LiveQueryFixtures {
-        static let seed: [ISO_9075.Fragment] = [
+        static let seed: [ISO.`9075`.Fragment] = [
             #"INSERT INTO "scores" ("player", "points") VALUES ('bob', 10), ('ada', 20), ('ada', 30), ('bob', 40), ('ada', 50)"#,
             #"""
             INSERT INTO "articles" ("title", "body") VALUES

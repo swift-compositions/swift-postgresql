@@ -37,7 +37,7 @@ import Testing
     @Test func `jsonb aggregate of a calculated expression`() throws {
         #expect(
             try PostgreSQL().render((JSONBFixtures.Order.columns.amount * 2.0).jsonbAgg().queryFragment)
-                == ISO_9075.Rendering(sql: #"jsonb_agg(("orders"."amount") * ($1))"#, values: [.double(2.0)])
+                == ISO.`9075`.Rendering(sql: #"jsonb_agg(("orders"."amount") * ($1))"#, values: [.double(2.0)])
         )
     }
 

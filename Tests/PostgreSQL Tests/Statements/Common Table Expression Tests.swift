@@ -15,7 +15,7 @@ import Testing
             .query
         )
         #expect(rendering.sql.hasPrefix(#"WITH "high_scores" AS MATERIALIZED ("#))
-        #expect(rendering.values == [ISO_9075.Value.int(10)])
+        #expect(rendering.values == [ISO.`9075`.Value.int(10)])
     }
 
     @Test func `a not materialized expression renders its keyword`() throws {

@@ -24,8 +24,8 @@
             return try PostgreSQL.Database(configuration: configuration)
         }
 
-        static func int(_ connection: PostgreSQL.Connection, _ query: ISO_9075.Fragment) throws -> Int64? {
-            let values = try connection.fetchAll(query) { row throws(ISO_9075.Error) -> ISO_9075.Value in
+        static func int(_ connection: PostgreSQL.Connection, _ query: ISO.`9075`.Fragment) throws -> Int64? {
+            let values = try connection.fetchAll(query) { row throws(ISO.`9075`.Error) -> ISO.`9075`.Value in
                 try row.value(at: 0)
             }
             guard case .int(let value)? = values.first else { return nil }
@@ -57,7 +57,7 @@
                                 measure()
                                 defer { busy.subtract(1, ordering: .relaxed) }
                                 _ = try connection.execute(
-                                    #"INSERT INTO "writes" ("writer") VALUES (\#(ISO_9075.Value.int(Int64(writer))))"#
+                                    #"INSERT INTO "writes" ("writer") VALUES (\#(ISO.9075.Value.int(Int64(writer))))"#
                                 )
                                 _ = try connection.execute("SELECT pg_sleep(0.01)")
                             }
@@ -74,10 +74,10 @@
             }
             let writers = try await database.read { connection in
                 try connection.fetchAll(#"SELECT "writer" FROM "writes" ORDER BY "writer""#) {
-                    row throws(ISO_9075.Error) -> ISO_9075.Value in try row.value(at: 0)
+                    row throws(ISO.`9075`.Error) -> ISO.`9075`.Value in try row.value(at: 0)
                 }
             }
-            #expect(writers == stride(from: 0, to: 200, by: 2).map { ISO_9075.Value.int(Int64($0)) })
+            #expect(writers == stride(from: 0, to: 200, by: 2).map { ISO.`9075`.Value.int(Int64($0)) })
             #expect(peak.load(ordering: .relaxed) <= 10, "never more bodies at once than connections")
             #expect(peak.load(ordering: .relaxed) > 1, "bodies ran concurrently")
             await pool.close()
@@ -155,7 +155,7 @@
             }
             try await Self.waitUntil { backend.load(ordering: .acquiring) != 0 }
             let killed = backend.load(ordering: .acquiring)
-            _ = try await database.execute("SELECT pg_terminate_backend(CAST(\(ISO_9075.Value.int(killed)) AS INTEGER))")
+            _ = try await database.execute("SELECT pg_terminate_backend(CAST(\(ISO.`9075`.Value.int(killed)) AS INTEGER))")
             let start = ContinuousClock.now
             let error = await #expect(throws: PostgreSQL.Error.self) { try await victim.value }
             #expect(error?.kind == .closed)
@@ -169,11 +169,11 @@
         @Test func `the migrator runs from empty, and a second run applies nothing`() async throws {
             let runs = Atomic<Int>(0)
             var migrator = Migrator<PostgreSQL.Database>()
-            migrator.register("Create makers") { connection throws(ISO_9075.Error) in
+            migrator.register("Create makers") { connection throws(ISO.`9075`.Error) in
                 runs.add(1, ordering: .relaxed)
                 _ = try connection.execute(#"CREATE TABLE "makers" ("id" BIGINT PRIMARY KEY, "name" TEXT NOT NULL)"#)
             }
-            migrator.register("Index makers by name") { connection throws(ISO_9075.Error) in
+            migrator.register("Index makers by name") { connection throws(ISO.`9075`.Error) in
                 runs.add(1, ordering: .relaxed)
                 _ = try connection.execute(#"CREATE INDEX "makers_name" ON "makers" ("name")"#)
             }

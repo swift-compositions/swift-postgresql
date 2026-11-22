@@ -45,7 +45,7 @@ extension QueryExpression where QueryValue: PostgreSQL.ArrayRepresentable {
         of element: some QueryExpression<QueryValue.Element>,
         from start: Int? = nil
     ) -> some QueryExpression<Int?> {
-        let start: ISO_9075.Fragment = start.map { ", \(raw: $0)" } ?? ""
+        let start: ISO.`9075`.Fragment = start.map { ", \(raw: $0)" } ?? ""
         return SQLQueryExpression("array_position(\(self), \(element)\(start))", as: Int?.self)
     }
 
@@ -88,14 +88,14 @@ extension QueryExpression where QueryValue: PostgreSQL.ArrayRepresentable {
     }
 
     public func arrayToString(separator: String, null: String? = nil) -> some QueryExpression<String?> {
-        let null: ISO_9075.Fragment = null.map { ", \(bind: $0)" } ?? ""
+        let null: ISO.`9075`.Fragment = null.map { ", \(bind: $0)" } ?? ""
         return SQLQueryExpression("array_to_string(\(self), \(bind: separator)\(null))", as: String?.self)
     }
 }
 
 extension QueryExpression where QueryValue: _OptionalPromotable<String?> {
     public func stringToArray(separator: String, null: String? = nil) -> some QueryExpression<PostgreSQL.Array<String?>?> {
-        let null: ISO_9075.Fragment = null.map { ", \(bind: $0)" } ?? ""
+        let null: ISO.`9075`.Fragment = null.map { ", \(bind: $0)" } ?? ""
         return SQLQueryExpression(
             "string_to_array(\(self), \(bind: separator)\(null))",
             as: PostgreSQL.Array<String?>?.self

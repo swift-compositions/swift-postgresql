@@ -114,23 +114,23 @@ extension PostgreSQL.Error.Code {
     public static let tooManyConnections = Self(rawValue: "53300")
 }
 
-extension ISO_9075.Error {
+extension ISO.`9075`.Error {
     /// A ``PostgreSQL/Error`` as the call-level interface's error, for a contract that names no database: a diagnostic
     /// with the server's SQLSTATE and message when the server reported one, otherwise an execution error described by
     /// its kind, message and statement.
     public init(_ error: PostgreSQL.Error) {
-        guard let code = error.code, let state = ISO_9075.Diagnostic.State(rawValue: code.rawValue) else {
+        guard let code = error.code, let state = ISO.`9075`.Diagnostic.State(rawValue: code.rawValue) else {
             self = .execution(error.description)
             return
         }
-        self = .diagnostic(ISO_9075.Diagnostic(state: state, message: error.message))
+        self = .diagnostic(ISO.`9075`.Diagnostic(state: state, message: error.message))
     }
 }
 
 extension PostgreSQL.Error {
     /// A failure the call-level interface reported, as a ``PostgreSQL/Error``: a value that could not be bound or
     /// decoded is ``Kind/value``; any other keeps its description as a ``Kind/server`` error without a code.
-    public init(_ error: ISO_9075.Error) {
+    public init(_ error: ISO.`9075`.Error) {
         switch error {
         case .binding(let failure): self.init(kind: .value, message: "\(failure)")
         case .decoding(let reason): self.init(kind: .value, message: reason)

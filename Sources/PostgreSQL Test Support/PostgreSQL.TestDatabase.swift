@@ -20,9 +20,9 @@
     extension PostgreSQL.TestDatabase {
         public struct Scope: SuiteTrait, TestScoping {
             public let configuration: PostgreSQL.Configuration
-            public let setUp: [ISO_9075.Fragment]
+            public let setUp: [ISO.`9075`.Fragment]
 
-            public init(configuration: PostgreSQL.Configuration, setUp: [ISO_9075.Fragment]) {
+            public init(configuration: PostgreSQL.Configuration, setUp: [ISO.`9075`.Fragment]) {
                 self.configuration = configuration
                 self.setUp = setUp
             }
@@ -34,7 +34,7 @@
                 testCase: Test.Case?,
                 performing function: @concurrent @Sendable () async throws -> Void
             ) async throws {
-                let name = ISO_9075.Identifier("swift_postgresql_\(String(UInt64.random(in: .min ... .max), radix: 16))")
+                let name = ISO.`9075`.Identifier("swift_postgresql_\(String(UInt64.random(in: .min ... .max), radix: 16))")
                 var isolated = configuration
                 isolated.database = name.name
                 isolated.poolSize = 4
@@ -76,13 +76,13 @@
                 await administration.close()
             }
 
-            private func create(_ name: ISO_9075.Identifier, on administration: PostgreSQL.Database) async throws {
+            private func create(_ name: ISO.`9075`.Identifier, on administration: PostgreSQL.Database) async throws {
                 _ = try await administration.writeWithoutTransaction { connection in
                     try connection.execute("CREATE DATABASE \(name)")
                 }
             }
 
-            private func drop(_ name: ISO_9075.Identifier, on administration: PostgreSQL.Database) async throws {
+            private func drop(_ name: ISO.`9075`.Identifier, on administration: PostgreSQL.Database) async throws {
                 _ = try await administration.writeWithoutTransaction { connection in
                     try connection.execute("DROP DATABASE \(name) WITH (FORCE)")
                 }
@@ -93,7 +93,7 @@
     extension Trait where Self == PostgreSQL.TestDatabase.Scope {
         public static func postgreSQL(
             configuration: PostgreSQL.Configuration,
-            setUp: [ISO_9075.Fragment]
+            setUp: [ISO.`9075`.Fragment]
         ) -> Self {
             Self(configuration: configuration, setUp: setUp)
         }

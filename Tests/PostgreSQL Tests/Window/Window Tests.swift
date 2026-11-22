@@ -18,7 +18,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"rank() OVER (ORDER BY "scores"."points" DESC)"#,
                     values: []
                 )
@@ -69,7 +69,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"lag("stock_prices"."price", 1) OVER (ORDER BY "stock_prices"."day" ASC)"#,
                     values: []
                 )
@@ -82,7 +82,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"lag("stock_prices"."price", 2, $1) OVER (ORDER BY "stock_prices"."day" ASC)"#,
                     values: [.double(0.0)]
                 )

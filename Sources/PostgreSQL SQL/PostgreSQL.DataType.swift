@@ -7,20 +7,20 @@ public import Time
 extension PostgreSQL {
     public protocol DataType: QueryBindable {
         static var typeName: String { get }
-        static var valueKind: ISO_9075.Value.Kind { get }
+        static var valueKind: ISO.`9075`.Value.Kind { get }
     }
 }
 
 extension PostgreSQL.DataType where Self: BinaryInteger {
     public static var typeName: String { "INTEGER" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .int }
+    public static var valueKind: ISO.`9075`.Value.Kind { .int }
 }
 
 extension PostgreSQL.DataType where Self: FloatingPoint {
     public static var typeName: String { "REAL" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .double }
+    public static var valueKind: ISO.`9075`.Value.Kind { .double }
 }
 
 extension Int: PostgreSQL.DataType {
@@ -60,43 +60,43 @@ extension Double: PostgreSQL.DataType {
 extension Bool: PostgreSQL.DataType {
     public static var typeName: String { "BOOLEAN" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .bool }
+    public static var valueKind: ISO.`9075`.Value.Kind { .bool }
 }
 
 extension String: PostgreSQL.DataType {
     public static var typeName: String { "TEXT" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .text }
+    public static var valueKind: ISO.`9075`.Value.Kind { .text }
 }
 
 extension [Byte]: PostgreSQL.DataType {
     public static var typeName: String { "BYTEA" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .blob }
+    public static var valueKind: ISO.`9075`.Value.Kind { .blob }
 }
 
 extension Time.Instant: PostgreSQL.DataType {
     public static var typeName: String { "TIMESTAMPTZ" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .timestamp }
+    public static var valueKind: ISO.`9075`.Value.Kind { .timestamp }
 }
 
 extension RFC_4122.UUID: PostgreSQL.DataType {
     public static var typeName: String { "UUID" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .uuid }
+    public static var valueKind: ISO.`9075`.Value.Kind { .uuid }
 }
 
 extension Optional: PostgreSQL.DataType where Wrapped: PostgreSQL.DataType {
     public static var typeName: String { Wrapped.typeName }
 
-    public static var valueKind: ISO_9075.Value.Kind { Wrapped.valueKind }
+    public static var valueKind: ISO.`9075`.Value.Kind { Wrapped.valueKind }
 }
 
 extension PostgreSQL.DataType where Self: RawRepresentable, RawValue: PostgreSQL.DataType {
     public static var typeName: String { RawValue.typeName }
 
-    public static var valueKind: ISO_9075.Value.Kind { RawValue.valueKind }
+    public static var valueKind: ISO.`9075`.Value.Kind { RawValue.valueKind }
 }
 
 extension QueryExpression where QueryValue: QueryBindable {

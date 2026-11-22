@@ -11,7 +11,7 @@ import Testing
         let rendering = try PostgreSQL().render(article.tags.contains(PostgreSQL.Array<String>(["swift"])).queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("articles"."tags" @> $1)"#,
                     values: [.array([.text("swift")], of: .text)]
                 )
@@ -43,7 +43,7 @@ import Testing
     @Test func `element edits bind the element`() throws {
         #expect(
             try PostgreSQL().render(article.tags.appending("new").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"array_append("articles"."tags", $1)"#,
                     values: [.text("new")]
                 )
@@ -92,14 +92,14 @@ import Testing
     @Test func `text conversion binds its separator and null text`() throws {
         #expect(
             try PostgreSQL().render(article.tags.arrayToString(separator: ", ").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"array_to_string("articles"."tags", $1)"#,
                     values: [.text(", ")]
                 )
         )
         #expect(
             try PostgreSQL().render(article.title.stringToArray(separator: " ", null: "-").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"string_to_array("articles"."title", $1, $2)"#,
                     values: [.text(" "), .text("-")]
                 )
@@ -109,7 +109,7 @@ import Testing
     @Test func `a filled array inlines its length`() throws {
         #expect(
             try PostgreSQL().render(PostgreSQL.Array<Int>.fill(0, count: 3).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "array_fill($1, ARRAY[3])",
                     values: [.int(0)]
                 )

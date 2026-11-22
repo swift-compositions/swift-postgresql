@@ -35,13 +35,13 @@ extension Table {
         )
     }
 
-    private static var indexTarget: ISO_9075.Fragment {
-        schemaName.map { schema -> ISO_9075.Fragment in "\(quote: schema).\(quote: tableName)" } ?? "\(quote: tableName)"
+    private static var indexTarget: ISO.`9075`.Fragment {
+        schemaName.map { schema -> ISO.`9075`.Fragment in "\(quote: schema).\(quote: tableName)" } ?? "\(quote: tableName)"
     }
 }
 
 extension PostgreSQL.JSON.OperatorClass {
-    fileprivate var suffix: ISO_9075.Fragment {
+    fileprivate var suffix: ISO.`9075`.Fragment {
         switch self {
         case .jsonbOps: ""
         case .jsonbPathOps: " \(raw: rawValue)"

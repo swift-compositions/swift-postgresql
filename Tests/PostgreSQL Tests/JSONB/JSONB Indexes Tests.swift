@@ -9,7 +9,7 @@ import Testing
     @Test func `gin index with the default operator class`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.settings).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"CREATE INDEX "idx_users_settings_gin" ON "users" USING GIN ("settings")"#,
                     values: []
                 )
@@ -35,7 +35,7 @@ import Testing
     @Test func `gin index on a path`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.createGINIndex(on: \.settings, path: ["stats", "visits"]).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"CREATE INDEX "idx_users_settings_stats_visits_gin" ON "users" USING GIN (("settings" #> '{"stats","visits"}'::text[]))"#,
                     values: []
                 )

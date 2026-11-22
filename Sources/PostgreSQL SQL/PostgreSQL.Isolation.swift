@@ -10,7 +10,7 @@ extension PostgreSQL {
 }
 
 extension PostgreSQL.Isolation {
-    public var begin: ISO_9075.Fragment {
+    public var begin: ISO.`9075`.Fragment {
         "BEGIN ISOLATION LEVEL \(raw: rawValue)"
     }
 }

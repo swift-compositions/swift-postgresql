@@ -10,7 +10,7 @@ extension PostgreSQL.Notification.Channel {
             encode: { change in
                 "json_build_object('operation', \(bind: change.operation.rawValue), 'new', \(PostgreSQL.Notification.Change<On>.json(change.new)), 'old', \(PostgreSQL.Notification.Change<On>.json(change.old)))::text"
             },
-            decode: { payload throws(ISO_9075.Error) in
+            decode: { payload throws(ISO.`9075`.Error) in
                 do throws(QueryDecodingError) {
                     return try PostgreSQL.Notification.Change<On>(json: payload)
                 } catch {
@@ -35,7 +35,7 @@ extension PostgreSQL.Notification.Change where Row: Table, Row.QueryOutput == Ro
         self.init(operation: operation, new: try row("new"), old: try row("old"))
     }
 
-    static func json(_ row: Row?) -> ISO_9075.Fragment {
+    static func json(_ row: Row?) -> ISO.`9075`.Fragment {
         row.map { "(SELECT row_to_json(\(quote: "row")) FROM (\($0.query)) AS \(quote: "row"))" } ?? "NULL"
     }
 }

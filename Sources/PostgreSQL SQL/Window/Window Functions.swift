@@ -29,7 +29,7 @@ extension QueryExpression where QueryValue: QueryBindable {
         return PostgreSQL.Window.Function("nth_value", [queryFragment, "\(raw: position)"])
     }
 
-    private func shifted(by offset: Int, default defaultValue: QueryValue?) -> [ISO_9075.Fragment] {
+    private func shifted(by offset: Int, default defaultValue: QueryValue?) -> [ISO.`9075`.Fragment] {
         precondition(offset >= 0, "a window offset must not be negative, got \(offset)")
         return [queryFragment, "\(raw: offset)"] + (defaultValue.map { [$0.queryFragment] } ?? [])
     }

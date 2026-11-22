@@ -58,7 +58,7 @@ extension QueryExpression where QueryValue == String {
             regexp(
                 "regexp_count",
                 [String(pattern).queryFragment],
-                [start.map { ISO_9075.Fragment("\(raw: $0)") }, flags?.queryFragment],
+                [start.map { ISO.`9075`.Fragment("\(raw: $0)") }, flags?.queryFragment],
                 defaults: ["1", ""]
             ),
             as: Int.self
@@ -76,8 +76,8 @@ extension QueryExpression where QueryValue == String {
                 "regexp_instr",
                 [String(pattern).queryFragment],
                 [
-                    start.map { ISO_9075.Fragment("\(raw: $0)") },
-                    occurrence.map { ISO_9075.Fragment("\(raw: $0)") },
+                    start.map { ISO.`9075`.Fragment("\(raw: $0)") },
+                    occurrence.map { ISO.`9075`.Fragment("\(raw: $0)") },
                     nil,
                     flags?.queryFragment,
                 ],
@@ -101,8 +101,8 @@ extension QueryExpression where QueryValue == String {
                 start == nil && occurrence == nil
                     ? [flags?.queryFragment]
                     : [
-                        start.map { ISO_9075.Fragment("\(raw: $0)") },
-                        occurrence.map { ISO_9075.Fragment("\(raw: $0)") },
+                        start.map { ISO.`9075`.Fragment("\(raw: $0)") },
+                        occurrence.map { ISO.`9075`.Fragment("\(raw: $0)") },
                         flags?.queryFragment,
                     ],
                 defaults: ["1", flags?.contains("g") == true ? "0" : "1", ""]
@@ -122,8 +122,8 @@ extension QueryExpression where QueryValue == String {
                 "regexp_substr",
                 [String(pattern).queryFragment],
                 [
-                    start.map { ISO_9075.Fragment("\(raw: $0)") },
-                    occurrence.map { ISO_9075.Fragment("\(raw: $0)") },
+                    start.map { ISO.`9075`.Fragment("\(raw: $0)") },
+                    occurrence.map { ISO.`9075`.Fragment("\(raw: $0)") },
                     flags?.queryFragment,
                 ],
                 defaults: ["1", "1", ""]
@@ -137,7 +137,7 @@ extension QueryExpression where QueryValue == String {
         _ pattern: some StringProtocol,
         escape: Character? = nil
     ) -> SQLQueryExpression<Bool> {
-        let clause: ISO_9075.Fragment = escape.map { " ESCAPE \(bind: String($0))" } ?? ""
+        let clause: ISO.`9075`.Fragment = escape.map { " ESCAPE \(bind: String($0))" } ?? ""
         return SQLQueryExpression(
             "(\(self) \(raw: `operator`) \(bind: String(pattern))\(clause))",
             as: Bool.self
@@ -146,16 +146,16 @@ extension QueryExpression where QueryValue == String {
 
     private func regexp(
         _ name: String,
-        _ arguments: [ISO_9075.Fragment],
-        _ options: [ISO_9075.Fragment?],
-        defaults: [ISO_9075.Fragment]
-    ) -> ISO_9075.Fragment {
+        _ arguments: [ISO.`9075`.Fragment],
+        _ options: [ISO.`9075`.Fragment?],
+        defaults: [ISO.`9075`.Fragment]
+    ) -> ISO.`9075`.Fragment {
         "\(raw: name)(\(([queryFragment] + arguments + options.positional(defaults: defaults)).joined(separator: ", ")))"
     }
 }
 
-extension [ISO_9075.Fragment?] {
-    fileprivate func positional(defaults: [ISO_9075.Fragment]) -> [ISO_9075.Fragment] {
+extension [ISO.`9075`.Fragment?] {
+    fileprivate func positional(defaults: [ISO.`9075`.Fragment]) -> [ISO.`9075`.Fragment] {
         zip(self, defaults).prefix((lastIndex { $0 != nil } ?? -1) + 1).map { $0 ?? $1 }
     }
 }

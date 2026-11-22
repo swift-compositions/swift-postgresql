@@ -14,9 +14,9 @@ extension PostgreSQL.TextSearch {
 extension PostgreSQL.TextSearch.Query: QueryRepresentable {}
 
 extension PostgreSQL.TextSearch.Query: QueryBindable {
-    public var queryBinding: ISO_9075.Value { .text(text) }
+    public var queryBinding: ISO.`9075`.Value { .text(text) }
 
-    public var queryFragment: ISO_9075.Fragment { "CAST(\(queryBinding) AS TSQUERY)" }
+    public var queryFragment: ISO.`9075`.Fragment { "CAST(\(queryBinding) AS TSQUERY)" }
 }
 
 extension PostgreSQL.TextSearch.Query: QueryDecodable {
@@ -28,5 +28,5 @@ extension PostgreSQL.TextSearch.Query: QueryDecodable {
 extension PostgreSQL.TextSearch.Query: PostgreSQL.DataType {
     public static var typeName: String { "TSQUERY" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .text }
+    public static var valueKind: ISO.`9075`.Value.Kind { .text }
 }

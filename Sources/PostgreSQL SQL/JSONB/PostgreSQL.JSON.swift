@@ -45,11 +45,11 @@ extension PostgreSQL.JSON {
 }
 
 extension PostgreSQL.JSON {
-    static func textArray(_ elements: [String]) -> ISO_9075.Fragment {
+    static func textArray(_ elements: [String]) -> ISO.`9075`.Fragment {
         "\(PostgreSQL.Array<String>(elements))::text[]"
     }
 
-    static func textArrayLiteral(_ elements: [String]) -> ISO_9075.Fragment {
+    static func textArrayLiteral(_ elements: [String]) -> ISO.`9075`.Fragment {
         "\(text: "{" + elements.map(quotedArrayElement).joined(separator: ",") + "}")::text[]"
     }
 
@@ -57,14 +57,14 @@ extension PostgreSQL.JSON {
         "\"" + element.replacing("\\", with: "\\\\").replacing("\"", with: "\\\"") + "\""
     }
 
-    static func document(_ value: some Codable) -> ISO_9075.Fragment {
+    static func document(_ value: some Codable) -> ISO.`9075`.Fragment {
         "\(PostgreSQL.JSONB(queryOutput: value))::jsonb"
     }
 
     static func fragments<each Value: QueryExpression>(
         _ values: repeat each Value
-    ) -> [ISO_9075.Fragment] {
-        var fragments: [ISO_9075.Fragment] = []
+    ) -> [ISO.`9075`.Fragment] {
+        var fragments: [ISO.`9075`.Fragment] = []
         for value in repeat each values {
             fragments.append(value.queryFragment)
         }
@@ -73,8 +73,8 @@ extension PostgreSQL.JSON {
 
     static func members<each Value: QueryExpression>(
         _ pairs: repeat (String, each Value)
-    ) -> [ISO_9075.Fragment] {
-        var members: [ISO_9075.Fragment] = []
+    ) -> [ISO.`9075`.Fragment] {
+        var members: [ISO.`9075`.Fragment] = []
         for pair in repeat each pairs {
             members.append("\(bind: pair.0), \(pair.1)")
         }

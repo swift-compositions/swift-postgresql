@@ -12,7 +12,7 @@ import Testing
         let rendering = try PostgreSQL().render(product.id.eq(.any(subquery)).queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("shop_products"."id") = ANY (SELECT id FROM featured)"#,
                     values: []
                 )
@@ -56,7 +56,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("shop_products"."id") = ANY ($1)"#,
                     values: [.array([.int(1), .int(2)], of: .int)]
                 )

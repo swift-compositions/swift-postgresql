@@ -14,9 +14,9 @@ extension PostgreSQL.TextSearch {
 extension PostgreSQL.TextSearch.Vector: QueryRepresentable {}
 
 extension PostgreSQL.TextSearch.Vector: QueryBindable {
-    public var queryBinding: ISO_9075.Value { .text(text) }
+    public var queryBinding: ISO.`9075`.Value { .text(text) }
 
-    public var queryFragment: ISO_9075.Fragment { "CAST(\(queryBinding) AS TSVECTOR)" }
+    public var queryFragment: ISO.`9075`.Fragment { "CAST(\(queryBinding) AS TSVECTOR)" }
 }
 
 extension PostgreSQL.TextSearch.Vector: QueryDecodable {
@@ -28,5 +28,5 @@ extension PostgreSQL.TextSearch.Vector: QueryDecodable {
 extension PostgreSQL.TextSearch.Vector: PostgreSQL.DataType {
     public static var typeName: String { "TSVECTOR" }
 
-    public static var valueKind: ISO_9075.Value.Kind { .text }
+    public static var valueKind: ISO.`9075`.Value.Kind { .text }
 }

@@ -48,8 +48,8 @@ extension PostgreSQL.Comparison {
 
     private static func arguments<each Argument: QueryExpression>(
         _ arguments: repeat each Argument
-    ) -> [ISO_9075.Fragment] {
-        var fragments: [ISO_9075.Fragment] = []
+    ) -> [ISO.`9075`.Fragment] {
+        var fragments: [ISO.`9075`.Fragment] = []
         for argument in repeat each arguments {
             fragments.append(argument.queryFragment)
         }

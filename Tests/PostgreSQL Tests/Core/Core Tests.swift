@@ -37,21 +37,21 @@ enum CoreFixtures {
 
 @Suite struct `The PostgreSQL dialect` {
     @Test func `numbers its placeholders`() throws {
-        let rendering = try PostgreSQL().render("SELECT \(ISO_9075.Value.int(1)), \(ISO_9075.Value.text("a"))")
-        #expect(rendering == ISO_9075.Rendering(sql: "SELECT $1, $2", values: [.int(1), .text("a")]))
+        let rendering = try PostgreSQL().render("SELECT \(ISO.`9075`.Value.int(1)), \(ISO.`9075`.Value.text("a"))")
+        #expect(rendering == ISO.`9075`.Rendering(sql: "SELECT $1, $2", values: [.int(1), .text("a")]))
     }
 
     @Test func `inlines an instant as a UTC TIMESTAMPTZ`() throws {
         let instant = try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 250_000_000)
-        #expect(try PostgreSQL().inline("\(ISO_9075.Value.timestamp(instant))") == "TIMESTAMPTZ '2026-01-01 00:00:00.250+00'")
+        #expect(try PostgreSQL().inline("\(ISO.`9075`.Value.timestamp(instant))") == "TIMESTAMPTZ '2026-01-01 00:00:00.250+00'")
     }
 
     @Test func `inlines bytes as BYTEA`() throws {
-        #expect(try PostgreSQL().inline("\(ISO_9075.Value.blob([0x01, 0xAB].map(Byte.init(bitPattern:))))") == #"'\x01ab'::BYTEA"#)
+        #expect(try PostgreSQL().inline("\(ISO.`9075`.Value.blob([0x01, 0xAB].map(Byte.init(bitPattern:))))") == #"'\x01ab'::BYTEA"#)
     }
 
     @Test func `inlines array elements in the dialect`() throws {
-        #expect(try PostgreSQL().inline("\(ISO_9075.Value.array([.blob([Byte(bitPattern: 0xFF)])], of: .blob))") == #"ARRAY['\xff'::BYTEA]::BYTEA[]"#)
+        #expect(try PostgreSQL().inline("\(ISO.`9075`.Value.array([.blob([Byte(bitPattern: 0xFF)])], of: .blob))") == #"ARRAY['\xff'::BYTEA]::BYTEA[]"#)
     }
 
     @Test func `spells an absent primary key as DEFAULT`() {
@@ -105,16 +105,16 @@ enum CoreFixtures {
     @Test func `bind their elements as one array value`() throws {
         let array = PostgreSQL.Array<String>(["a", "b"])
         #expect(array.queryBinding == .array([.text("a"), .text("b")], of: .text))
-        #expect(try PostgreSQL().render(array.queryFragment) == ISO_9075.Rendering(sql: "$1", values: [.array([.text("a"), .text("b")], of: .text)]))
+        #expect(try PostgreSQL().render(array.queryFragment) == ISO.`9075`.Rendering(sql: "$1", values: [.array([.text("a"), .text("b")], of: .text)]))
     }
 
     @Test func `bind empty with their element kind`() throws {
-        #expect(try PostgreSQL().render(PostgreSQL.Array<Int>([]).queryFragment) == ISO_9075.Rendering(sql: "$1", values: [.array([], of: .int)]))
+        #expect(try PostgreSQL().render(PostgreSQL.Array<Int>([]).queryFragment) == ISO.`9075`.Rendering(sql: "$1", values: [.array([], of: .int)]))
         #expect(PostgreSQL.Array<RFC_4122.UUID>([]).queryBinding == .array([], of: .uuid))
     }
 
     @Test func `inline empty with their element type`() throws {
-        #expect(try PostgreSQL().inline("\(ISO_9075.Value.array([], of: .timestamp))") == "ARRAY[]::TIMESTAMPTZ[]")
+        #expect(try PostgreSQL().inline("\(ISO.`9075`.Value.array([], of: .timestamp))") == "ARRAY[]::TIMESTAMPTZ[]")
     }
 
     @Test func `render a typed empty array`() throws {
@@ -123,7 +123,7 @@ enum CoreFixtures {
 
     @Test func `construct an array from expressions`() throws {
         let rendering = try PostgreSQL().render(PostgreSQL.Array<Int>.of([1, 2]).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: "ARRAY[$1, $2]", values: [.int(1), .int(2)]))
+        #expect(rendering == ISO.`9075`.Rendering(sql: "ARRAY[$1, $2]", values: [.int(1), .int(2)]))
     }
 
     @Test func `decode the text format`() throws {

@@ -58,7 +58,7 @@
             switch error {
             case let error as PostgreSQL.Error: error
             case let error as PSQLError: PostgreSQL.Error(error, statement: statement)
-            case let error as ISO_9075.Error: PostgreSQL.Error(error)
+            case let error as ISO.`9075`.Error: PostgreSQL.Error(error)
             case is CancellationError: PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled", statement: statement)
             case is NIOSSLError, is BoringSSLError, is NIOSSLExtraError:
                 PostgreSQL.Error(kind: .tls, message: "\(error)", statement: statement)

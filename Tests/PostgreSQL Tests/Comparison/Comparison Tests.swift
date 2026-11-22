@@ -13,7 +13,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"greatest("price_items"."price", "price_items"."comparePrice")"#,
                     values: []
                 )
@@ -26,7 +26,7 @@ import Testing
         )
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"least("price_items"."price", $1, "price_items"."comparePrice")"#,
                     values: [.double(100.0)]
                 )

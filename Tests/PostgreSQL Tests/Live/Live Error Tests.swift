@@ -26,15 +26,15 @@
             #expect(error?.detail?.contains("taken") == true)
             #expect(error?.statement == #"INSERT INTO "keys" VALUES ('taken')"#)
             let keys = try await database.read { connection in
-                try connection.fetchAll(#"SELECT "key" FROM "keys" ORDER BY "key""#) { row throws(ISO_9075.Error) -> ISO_9075.Value in try row.value(at: 0) }
+                try connection.fetchAll(#"SELECT "key" FROM "keys" ORDER BY "key""#) { row throws(ISO.`9075`.Error) -> ISO.`9075`.Value in try row.value(at: 0) }
             }
             #expect(keys == [.text("taken")], "the failed write rolled back")
         }
 
         @Test func `the call-level interface carries the server's SQLSTATE as its diagnostic's state`() async throws {
             _ = try await database.execute(#"INSERT INTO "keys" VALUES ('twice') ON CONFLICT DO NOTHING"#)
-            let error = await #expect(throws: ISO_9075.Error.self) {
-                try await database.write { connection throws(ISO_9075.Error) in
+            let error = await #expect(throws: ISO.`9075`.Error.self) {
+                try await database.write { connection throws(ISO.`9075`.Error) in
                     _ = try connection.execute(#"INSERT INTO "keys" VALUES ('twice')"#)
                 }
             }
@@ -43,7 +43,7 @@
                 return
             }
             #expect(diagnostic.state.rawValue == "23505")
-            #expect(diagnostic.state.class == ISO_9075.Diagnostic.State.integrityConstraintViolation.class)
+            #expect(diagnostic.state.class == ISO.`9075`.Diagnostic.State.integrityConstraintViolation.class)
         }
 
         @Test func `an error of the caller's own comes out unchanged`() async throws {
@@ -54,7 +54,7 @@
                 }
             }
             let count = try await database.read { connection in
-                try connection.fetchAll(#"SELECT count(*) FROM "keys" WHERE "key" = 'refused'"#) { row throws(ISO_9075.Error) -> ISO_9075.Value in try row.value(at: 0) }
+                try connection.fetchAll(#"SELECT count(*) FROM "keys" WHERE "key" = 'refused'"#) { row throws(ISO.`9075`.Error) -> ISO.`9075`.Value in try row.value(at: 0) }
             }
             #expect(count == [.int(0)])
         }

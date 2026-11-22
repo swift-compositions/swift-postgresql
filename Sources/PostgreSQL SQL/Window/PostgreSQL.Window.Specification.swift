@@ -3,26 +3,26 @@ public import SQL
 
 extension PostgreSQL.Window {
     public struct Specification: Sendable {
-        let partitions: [ISO_9075.Fragment]
-        let orderings: [ISO_9075.Fragment]
+        let partitions: [ISO.`9075`.Fragment]
+        let orderings: [ISO.`9075`.Fragment]
         let frame: Frame?
 
         public init() {
             self.init(partitions: [], orderings: [], frame: nil)
         }
 
-        init(partitions: [ISO_9075.Fragment], orderings: [ISO_9075.Fragment], frame: Frame?) {
+        init(partitions: [ISO.`9075`.Fragment], orderings: [ISO.`9075`.Fragment], frame: Frame?) {
             self.partitions = partitions
             self.orderings = orderings
             self.frame = frame
         }
 
-        var queryFragment: ISO_9075.Fragment {
+        var queryFragment: ISO.`9075`.Fragment {
             ([
                 partitions.isEmpty ? nil : "PARTITION BY \(partitions.joined(separator: ", "))",
                 orderings.isEmpty ? nil : "ORDER BY \(orderings.joined(separator: ", "))",
                 frame?.queryFragment,
-            ] as [ISO_9075.Fragment?])
+            ] as [ISO.`9075`.Fragment?])
             .compactMap(\.self)
             .joined(separator: " ")
         }
@@ -36,7 +36,7 @@ extension PostgreSQL.Window.Specification {
 
     public func partition(
         @QueryFragmentBuilder<()>
-        by expressions: () -> [ISO_9075.Fragment]
+        by expressions: () -> [ISO.`9075`.Fragment]
     ) -> Self {
         Self(partitions: partitions + expressions(), orderings: orderings, frame: frame)
     }
@@ -47,7 +47,7 @@ extension PostgreSQL.Window.Specification {
 
     public func order(
         @QueryFragmentBuilder<()>
-        by expressions: () -> [ISO_9075.Fragment]
+        by expressions: () -> [ISO.`9075`.Fragment]
     ) -> Self {
         Self(partitions: partitions, orderings: orderings + expressions(), frame: frame)
     }

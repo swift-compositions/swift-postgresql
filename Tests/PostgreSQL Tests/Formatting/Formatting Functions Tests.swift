@@ -11,7 +11,7 @@ import Time
     @Test func `to_char binds the format for timestamps and numbers`() throws {
         #expect(
             try PostgreSQL().render(columns.issuedAt.toChar("YYYY-MM-DD").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"to_char("invoices"."issuedAt", $1)"#,
                     values: [.text("YYYY-MM-DD")]
                 )
@@ -24,7 +24,7 @@ import Time
         let date: some QueryExpression<Time.Instant> = columns.reference.toDate(format: "YYYY-MM-DD")
         #expect(
             try PostgreSQL().render(date.queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"to_date("invoices"."reference", $1)"#,
                     values: [.text("YYYY-MM-DD")]
                 )

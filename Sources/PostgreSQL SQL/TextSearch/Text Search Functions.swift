@@ -77,7 +77,7 @@ extension QueryExpression where QueryValue: _OptionalPromotable<String?> {
         options: PostgreSQL.TextSearch.Headline = PostgreSQL.TextSearch.Headline(),
         configuration: PostgreSQL.TextSearch.Configuration
     ) -> some QueryExpression<QueryValue> {
-        let options: ISO_9075.Fragment = options.text.map { ", \(bind: $0)" } ?? ""
+        let options: ISO.`9075`.Fragment = options.text.map { ", \(bind: $0)" } ?? ""
         return SQLQueryExpression(
             "ts_headline(\(configuration.queryFragment), \(self), \(query)\(options))",
             as: QueryValue.self

@@ -9,21 +9,21 @@ import Testing
     @Test func `field binds the key`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.field("theme").queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" -> $1)"#, values: [.text("theme")])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" -> $1)"#, values: [.text("theme")])
         )
     }
 
     @Test func `field as text binds the key`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.fieldAsText("theme").queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" ->> $1)"#, values: [.text("theme")])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" ->> $1)"#, values: [.text("theme")])
         )
     }
 
     @Test func `fields chain`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.field("preferences").field("ui").fieldAsText("theme").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"((("users"."settings" -> $1) -> $2) ->> $3)"#,
                     values: [.text("preferences"), .text("ui"), .text("theme")]
                 )
@@ -33,25 +33,25 @@ import Testing
     @Test func `element binds an integer index`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.element(at: 0).queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" -> $1::integer)"#, values: [.int(0)])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" -> $1::integer)"#, values: [.int(0)])
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.elementAsText(at: 1).queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" ->> $1::integer)"#, values: [.int(1)])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" ->> $1::integer)"#, values: [.int(1)])
         )
     }
 
     @Test func `path extraction binds a text array`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.value(at: ["address", "city"]).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("users"."settings" #> $1::text[])"#,
                     values: [.array([.text("address"), .text("city")], of: .text)]
                 )
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.valueAsText(at: ["contact", "email"]).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("users"."settings" #>> $1::text[])"#,
                     values: [.array([.text("contact"), .text("email")], of: .text)]
                 )
@@ -72,7 +72,7 @@ import Testing
     @Test func `an empty path stays a typed empty array`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.value(at: []).queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" #> $1::text[])"#, values: [.array([], of: .text)])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" #> $1::text[])"#, values: [.array([], of: .text)])
         )
     }
 
@@ -95,21 +95,21 @@ import Testing
     @Test func `key existence binds the key`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.hasKey("notifications").queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" ? $1)"#, values: [.text("notifications")])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" ? $1)"#, values: [.text("notifications")])
         )
     }
 
     @Test func `any and all key existence bind a text array`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.hasAny(of: ["theme", "appearance"]).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("users"."settings" ?| $1::text[])"#,
                     values: [.array([.text("theme"), .text("appearance")], of: .text)]
                 )
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.hasAll(of: ["theme", "language"]).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("users"."settings" ?& $1::text[])"#,
                     values: [.array([.text("theme"), .text("language")], of: .text)]
                 )
@@ -125,18 +125,18 @@ import Testing
     @Test func `deletion by key, keys, index and path`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.removing("theme").queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" - $1)"#, values: [.text("theme")])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" - $1)"#, values: [.text("theme")])
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.removing(keys: ["a", "b"]).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"("users"."settings" - $1::text[])"#,
                     values: [.array([.text("a"), .text("b")], of: .text)]
                 )
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.removing(at: 2).queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" - $1::integer)"#, values: [.int(2)])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" - $1::integer)"#, values: [.int(2)])
         )
         #expect(
             JSONBFixtures.User.columns.settings.removing(path: JSONBFixtures.reservedPath).queryFragment.debugDescription
@@ -151,18 +151,18 @@ import Testing
         let _: [Byte]?.Type = JSONBFixtures.queryValue(of: JSONBFixtures.User.columns.preferences.removing("k"))
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.metadata.removing("k").queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."metadata" - $1)"#, values: [.text("k")])
+                == ISO.`9075`.Rendering(sql: #"("users"."metadata" - $1)"#, values: [.text("k")])
         )
     }
 
     @Test func `jsonpath operators cast the bound path`() throws {
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.jsonPathExists("$.theme").queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" @? $1::jsonpath)"#, values: [.text("$.theme")])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" @? $1::jsonpath)"#, values: [.text("$.theme")])
         )
         #expect(
             try PostgreSQL().render(JSONBFixtures.User.columns.settings.jsonPathMatch(#"$.age > 18"#).queryFragment)
-                == ISO_9075.Rendering(sql: #"("users"."settings" @@ $1::jsonpath)"#, values: [.text("$.age > 18")])
+                == ISO.`9075`.Rendering(sql: #"("users"."settings" @@ $1::jsonpath)"#, values: [.text("$.age > 18")])
         )
     }
 
@@ -170,7 +170,7 @@ import Testing
         let predicate = JSONBFixtures.User.columns.settings.hasKey("theme") && JSONBFixtures.User.columns.metadata.fieldAsText("status").eq("active")
         #expect(
             try PostgreSQL().render(predicate.queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"(("users"."settings" ? $1)) AND ((("users"."metadata" ->> $2)) = ($3))"#,
                     values: [.text("theme"), .text("status"), .text("active")]
                 )

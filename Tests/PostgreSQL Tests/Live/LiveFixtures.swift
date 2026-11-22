@@ -46,7 +46,7 @@
             var body: String
         }
 
-        static let schema: [ISO_9075.Fragment] = [
+        static let schema: [ISO.`9075`.Fragment] = [
             #"""
             CREATE TABLE "samples" (
               "id" BIGSERIAL PRIMARY KEY,

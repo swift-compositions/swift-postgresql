@@ -57,7 +57,7 @@ extension QueryExpression where QueryValue == String {
         from position: Int,
         for length: Int? = nil
     ) -> some QueryExpression<String> {
-        let count: ISO_9075.Fragment = length.map { " FOR \(raw: $0)" } ?? ""
+        let count: ISO.`9075`.Fragment = length.map { " FOR \(raw: $0)" } ?? ""
         return SQLQueryExpression(
             "overlay(\(self) PLACING \(replacement) FROM \(raw: position)\(count))",
             as: String.self

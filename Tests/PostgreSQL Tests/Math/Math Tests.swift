@@ -13,7 +13,7 @@ import Testing
         #expect(try PostgreSQL().render(PostgreSQL.Math.random().queryFragment).sql == "random()")
         #expect(
             try PostgreSQL().render(PostgreSQL.Math.setseed(0.5).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "setseed($1)",
                     values: [.double(0.5)]
                 )
@@ -31,7 +31,7 @@ import Testing
     @Test func `rounding goes through numeric and returns double precision`() throws {
         #expect(
             try PostgreSQL().render(measurement.value.round(2).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"CAST(round(CAST("measurements"."value" AS NUMERIC), CAST($1 AS INTEGER)) AS DOUBLE PRECISION)"#,
                     values: [.int(2)]
                 )
@@ -48,12 +48,12 @@ import Testing
 
     @Test func `truncation to decimal places goes through numeric`() throws {
         let rendering = try PostgreSQL().render(measurement.value.trunc(decimalPlaces: 2).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: #"trunc(CAST("measurements"."value" AS NUMERIC), 2)"#, values: []))
+        #expect(rendering == ISO.`9075`.Rendering(sql: #"trunc(CAST("measurements"."value" AS NUMERIC), 2)"#, values: []))
     }
 
     @Test func `integer division binds a value divisor`() throws {
         let rendering = try PostgreSQL().render(number.value.div(10).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: #"div("numbers"."value", $1)"#, values: [.int(10)]))
+        #expect(rendering == ISO.`9075`.Rendering(sql: #"div("numbers"."value", $1)"#, values: [.int(10)]))
     }
 
     @Test func `number theory functions take two expressions`() throws {
@@ -71,7 +71,7 @@ import Testing
     @Test func `exponential functions render their names`() throws {
         #expect(
             try PostgreSQL().render(measurement.value.power(2.0).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"power("measurements"."value", $1)"#,
                     values: [.double(2)]
                 )
@@ -85,7 +85,7 @@ import Testing
 
     @Test func `a logarithm with a base goes through numeric`() throws {
         let rendering = try PostgreSQL().render(measurement.value.log(base: 2.0).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: #"log(CAST($1 AS NUMERIC), CAST("measurements"."value" AS NUMERIC))"#, values: [.double(2)]))
+        #expect(rendering == ISO.`9075`.Rendering(sql: #"log(CAST($1 AS NUMERIC), CAST("measurements"."value" AS NUMERIC))"#, values: [.double(2)]))
     }
 
     @Test func `trigonometric functions render their names`() throws {
@@ -128,7 +128,7 @@ import Testing
         let rendering = try PostgreSQL().render(measurement.value.widthBucket(from: 0.0, to: 10.0, buckets: 5).queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"width_bucket("measurements"."value", $1, $2, 5)"#,
                     values: [.double(0), .double(10)]
                 )
@@ -146,7 +146,7 @@ import Testing
     @Test func `random numbers in a range bind their bounds`() throws {
         #expect(
             try PostgreSQL().render(PostgreSQL.Math.random(in: 1...6).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "random($1, $2)",
                     values: [.int(1), .int(6)]
                 )

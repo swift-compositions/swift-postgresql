@@ -91,7 +91,7 @@ extension QueryExpression where QueryValue: Numeric & QueryBindable {
         return SQLQueryExpression("width_bucket(\(self), \(low), \(high), \(raw: buckets))", as: Int.self)
     }
 
-    fileprivate var numeric: ISO_9075.Fragment {
+    fileprivate var numeric: ISO.`9075`.Fragment {
         "CAST(\(self) AS NUMERIC)"
     }
 }

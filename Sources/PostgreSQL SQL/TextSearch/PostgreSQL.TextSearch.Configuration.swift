@@ -9,7 +9,7 @@ extension PostgreSQL.TextSearch {
             self.name = name
         }
 
-        var queryFragment: ISO_9075.Fragment {
+        var queryFragment: ISO.`9075`.Fragment {
             "\(text: name)::regconfig"
         }
     }

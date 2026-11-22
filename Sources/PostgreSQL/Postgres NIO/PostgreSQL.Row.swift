@@ -9,7 +9,7 @@
     internal import Time
 
     extension PostgreSQL {
-        public struct Row: ISO_9075.Row, Sendable {
+        public struct Row: ISO.`9075`.Row, Sendable {
             let cells: [PostgresCell]
 
             package init(_ row: PostgresRow) {
@@ -18,7 +18,7 @@
 
             public var columns: [String] { cells.map(\.columnName) }
 
-            public func value(at index: Int) throws(ISO_9075.Error) -> ISO_9075.Value {
+            public func value(at index: Int) throws(ISO.`9075`.Error) -> ISO.`9075`.Value {
                 guard cells.indices.contains(index) else { throw .decoding("no column \(index)") }
                 return try cells[index].value
             }
@@ -26,8 +26,8 @@
     }
 
     extension PostgresCell {
-        var value: ISO_9075.Value {
-            get throws(ISO_9075.Error) {
+        var value: ISO.`9075`.Value {
+            get throws(ISO.`9075`.Error) {
                 guard bytes != nil else { return .null }
                 return switch dataType {
                 case .bool: .bool(try decoded(Bool.self))
@@ -46,7 +46,7 @@
             }
         }
 
-        func decoded<Value: PostgresDecodable>(_ type: Value.Type) throws(ISO_9075.Error) -> Value {
+        func decoded<Value: PostgresDecodable>(_ type: Value.Type) throws(ISO.`9075`.Error) -> Value {
             do {
                 return try decode(Value.self)
             } catch {
@@ -55,11 +55,11 @@
         }
 
         var arrayLiteral: String {
-            get throws(ISO_9075.Error) {
+            get throws(ISO.`9075`.Error) {
                 func literal<Element: PostgresArrayDecodable>(
                     _ type: Element.Type,
-                    _ field: (Element) throws(ISO_9075.Error) -> String
-                ) throws(ISO_9075.Error) -> String where Element == Element._DecodableType {
+                    _ field: (Element) throws(ISO.`9075`.Error) -> String
+                ) throws(ISO.`9075`.Error) -> String where Element == Element._DecodableType {
                     "{" + (try decoded([Element].self).map(field)).joined(separator: ",") + "}"
                 }
                 return switch dataType {
@@ -68,10 +68,10 @@
                 case .float4Array, .float8Array: try literal(Double.self) { "\($0)" }
                 case .uuidArray: try literal(Foundation.UUID.self) { $0.uuidString.lowercased() }
                 case .timestampArray, .timestamptzArray, .dateArray:
-                    try literal(PostgresInstant.self) { instant throws(ISO_9075.Error) in
+                    try literal(PostgresInstant.self) { instant throws(ISO.`9075`.Error) in
                         let instant = instant.instant
                         do {
-                            return PostgresCell.quoted(try ISO_9075.Literal.timestamp(instant))
+                            return PostgresCell.quoted(try ISO.`9075`.Literal.timestamp(instant))
                         } catch {
                             throw .decoding("\(instant) as a timestamp: \(error)")
                         }

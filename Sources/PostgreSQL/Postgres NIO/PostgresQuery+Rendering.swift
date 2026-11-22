@@ -10,7 +10,7 @@
 
     extension PostgresQuery {
         /// The engine's query for a rendering: its SQL, and each value bound in order.
-        package init(_ rendering: ISO_9075.Rendering) throws(ISO_9075.Error) {
+        package init(_ rendering: ISO.`9075`.Rendering) throws(ISO.`9075`.Error) {
             var bindings = PostgresBindings(capacity: rendering.values.count)
             for value in rendering.values {
                 try value.bind(to: &bindings)
@@ -19,8 +19,8 @@
         }
     }
 
-    extension ISO_9075.Value {
-        func bind(to bindings: inout PostgresBindings) throws(ISO_9075.Error) {
+    extension ISO.`9075`.Value {
+        func bind(to bindings: inout PostgresBindings) throws(ISO.`9075`.Error) {
             switch self {
             case .null: bindings.appendNull()
             case .bool(let bool): bindings.append(bool)
@@ -33,23 +33,23 @@
             case .json(let bytes): bindings.append(PostgresData(jsonb: Data(bytes.map(\.underlying))))
             case .decimal(let digits):
                 guard digits.wholeMatch(of: /[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?|NaN|[+-]?Infinity/) != nil else {
-                    throw .binding(ISO_9075.Value.Failure("\(digits) is not a decimal"))
+                    throw .binding(ISO.`9075`.Value.Failure("\(digits) is not a decimal"))
                 }
                 bindings.append(PostgresData(type: .numeric, formatCode: .text, value: ByteBuffer(string: digits)))
-            case .array(let values, let kind): try ISO_9075.Value.bind(array: values, of: kind, to: &bindings)
+            case .array(let values, let kind): try ISO.`9075`.Value.bind(array: values, of: kind, to: &bindings)
             case .invalid(let failure): throw .binding(failure)
             }
         }
 
         private static func bind(
-            array values: [ISO_9075.Value],
-            of kind: ISO_9075.Value.Kind,
+            array values: [ISO.`9075`.Value],
+            of kind: ISO.`9075`.Value.Kind,
             to bindings: inout PostgresBindings
-        ) throws(ISO_9075.Error) {
-            func homogeneous<Element>(_ element: (ISO_9075.Value) -> Element?) throws(ISO_9075.Error) -> [Element] {
+        ) throws(ISO.`9075`.Error) {
+            func homogeneous<Element>(_ element: (ISO.`9075`.Value) -> Element?) throws(ISO.`9075`.Error) -> [Element] {
                 let elements = values.compactMap(element)
                 guard elements.count == values.count else {
-                    throw .binding(ISO_9075.Value.Failure("PostgreSQL arrays of \(kind) hold only \(kind) elements and no nulls when bound: \(values)"))
+                    throw .binding(ISO.`9075`.Value.Failure("PostgreSQL arrays of \(kind) hold only \(kind) elements and no nulls when bound: \(values)"))
                 }
                 return elements
             }
@@ -69,7 +69,7 @@
             case .timestamp:
                 bindings.append(try homogeneous { if case .timestamp(let instant) = $0 { PostgresInstant(instant) } else { nil } })
             case .decimal, .json:
-                throw .binding(ISO_9075.Value.Failure("PostgreSQL has no array binding for \(kind)"))
+                throw .binding(ISO.`9075`.Value.Failure("PostgreSQL has no array binding for \(kind)"))
             }
         }
     }

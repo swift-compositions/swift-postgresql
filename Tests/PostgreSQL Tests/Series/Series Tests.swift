@@ -8,14 +8,14 @@ import Time
 @Suite struct `Set-returning series` {
     @Test func `an integer series binds its bounds`() throws {
         let rendering = try PostgreSQL().render(PostgreSQL.Series.generate(from: 1, through: 10).queryFragment)
-        #expect(rendering == ISO_9075.Rendering(sql: "generate_series($1, $2)", values: [.int(1), .int(10)]))
+        #expect(rendering == ISO.`9075`.Rendering(sql: "generate_series($1, $2)", values: [.int(1), .int(10)]))
     }
 
     @Test func `an integer series binds its step`() throws {
         let rendering = try PostgreSQL().render(PostgreSQL.Series.generate(from: 0, through: 100, by: 10).queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "generate_series($1, $2, $3)",
                     values: [.int(0), .int(100), .int(10)]
                 )
@@ -50,7 +50,7 @@ import Time
         let rendering = try PostgreSQL().render(title.regexpMatches("a+").queryFragment)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"regexp_matches("posts"."title", $1, $2)"#,
                     values: [.text("a+"), .text("g")]
                 )
@@ -60,14 +60,14 @@ import Time
     @Test func `regexp_split_to_table binds flags only when given`() throws {
         #expect(
             try PostgreSQL().render(title.regexpSplitToTable(",").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"regexp_split_to_table("posts"."title", $1)"#,
                     values: [.text(",")]
                 )
         )
         #expect(
             try PostgreSQL().render(title.regexpSplitToTable(",", flags: "i").queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"regexp_split_to_table("posts"."title", $1, $2)"#,
                     values: [.text(","), .text("i")]
                 )

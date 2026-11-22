@@ -13,7 +13,7 @@ import Time
         let rendering = try PostgreSQL().render(PostgreSQL.Notification.Channel("events").notify("hello").query)
         #expect(
             rendering
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: "SELECT pg_notify($1, $2)",
                     values: [.text("events"), .text("hello")]
                 )
@@ -113,7 +113,7 @@ import Time
     }
 
     @Test func `a payload without an operation is rejected`() throws {
-        #expect(throws: ISO_9075.Error.self) {
+        #expect(throws: ISO.`9075`.Error.self) {
             try channel.decode(#"{"new":null}"#)
         }
     }
@@ -131,6 +131,6 @@ import Time
         let rendering = try PostgreSQL().render(channel.notify(PostgreSQL.Notification.Change(operation: .insert, new: event, old: nil)).query)
         #expect(rendering.sql.hasPrefix(#"SELECT pg_notify($1, json_build_object('operation', $2, 'new', (SELECT row_to_json("row") FROM (SELECT $3 AS "id""#))
         #expect(rendering.sql.hasSuffix(#") AS "row"), 'old', NULL)::text)"#))
-        #expect(Array(rendering.values.prefix(4)) == [ISO_9075.Value.text("events"), .text("INSERT"), .int(3), .text("Sent")])
+        #expect(Array(rendering.values.prefix(4)) == [ISO.`9075`.Value.text("events"), .text("INSERT"), .int(3), .text("Sent")])
     }
 }

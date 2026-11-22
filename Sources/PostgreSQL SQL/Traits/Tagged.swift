@@ -7,6 +7,6 @@
     where Tag: ~Copyable & ~Escapable, Underlying: PostgreSQL.DataType {
         public static var typeName: String { Underlying.typeName }
 
-        public static var valueKind: ISO_9075.Value.Kind { Underlying.valueKind }
+        public static var valueKind: ISO.`9075`.Value.Kind { Underlying.valueKind }
     }
 #endif

@@ -21,11 +21,11 @@ extension PostgreSQL.JSONB: Hashable where Value: Hashable {}
 extension PostgreSQL.JSONB: Sendable where Value: Sendable {}
 
 extension PostgreSQL.JSONB: QueryBindable {
-    public var queryBinding: ISO_9075.Value {
+    public var queryBinding: ISO.`9075`.Value {
         do {
             return .json(try Self.encoder.encode(queryOutput).map(Byte.init(bitPattern:)))
         } catch {
-            return .invalid(ISO_9075.Value.Failure(error))
+            return .invalid(ISO.`9075`.Value.Failure(error))
         }
     }
 }
@@ -45,11 +45,11 @@ extension PostgreSQL.JSONB {
         }
     }
 
-    var textBinding: ISO_9075.Value {
+    var textBinding: ISO.`9075`.Value {
         do {
             return .text(String(decoding: try Self.encoder.encode(queryOutput), as: UTF8.self))
         } catch {
-            return .invalid(ISO_9075.Value.Failure(error))
+            return .invalid(ISO.`9075`.Value.Failure(error))
         }
     }
 }

@@ -8,7 +8,7 @@ import Testing
     @Test func `encode inlines the encoding`() throws {
         #expect(
             try PostgreSQL().render(BinaryFixtures.Attachment.columns.content.encode(.hex).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"encode("attachments"."content", 'hex')"#,
                     values: []
                 )

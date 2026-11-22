@@ -12,8 +12,8 @@ extension PostgreSQL {
             self.schema = schema
         }
 
-        var reference: ISO_9075.Fragment {
-            schema.map { schema -> ISO_9075.Fragment in "\(quote: schema).\(quote: name)" } ?? "\(quote: name)"
+        var reference: ISO.`9075`.Fragment {
+            schema.map { schema -> ISO.`9075`.Fragment in "\(quote: schema).\(quote: name)" } ?? "\(quote: name)"
         }
 
         /// `CREATE FUNCTION … RETURNS trigger LANGUAGE plpgsql` with `body` dollar-quoted, under `$function$` or, when

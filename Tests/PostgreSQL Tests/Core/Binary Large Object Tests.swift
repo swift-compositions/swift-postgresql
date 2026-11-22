@@ -10,7 +10,7 @@ extension PostgreSQL {
 
 extension PostgreSQL.Test.Unit {
     @Test func `PostgreSQL spells the binary large object type BYTEA`() throws {
-        let fragment: ISO_9075.Fragment = "CREATE TABLE \(quote: "files") (\(quote: "bytes") \(ISO_9075.Keyword.binaryLargeObject))"
+        let fragment: ISO.`9075`.Fragment = "CREATE TABLE \(quote: "files") (\(quote: "bytes") \(ISO.`9075`.Keyword.binaryLargeObject))"
         #expect(try PostgreSQL().render(fragment).sql == #"CREATE TABLE "files" ("bytes" BYTEA)"#)
     }
 }

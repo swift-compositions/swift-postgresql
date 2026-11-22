@@ -17,10 +17,10 @@
 
         @Test func `every binding type round-trips through a row`() async throws {
             let draft = try LiveFixtures.sample("round trip")
-            let inserted = try await database.write { connection throws(ISO_9075.Error) in
+            let inserted = try await database.write { connection throws(ISO.`9075`.Error) in
                 try Sample.insert { draft }.returning(\.self).fetch.one(connection)
             }
-            let fetched = try await database.read { connection throws(ISO_9075.Error) in
+            let fetched = try await database.read { connection throws(ISO.`9075`.Error) in
                 try Sample.where { $0.name.eq("round trip") }.fetch.one(connection)
             }
             #expect(inserted == fetched)
@@ -36,8 +36,8 @@
         }
 
         @Test func `a connection answers a bound select`() async throws {
-            let values = try await database.read { connection throws(ISO_9075.Error) in
-                try connection.fetchAll("SELECT \(ISO_9075.Value.int(41)) + 1, \(ISO_9075.Value.text("ok"))") { row throws(ISO_9075.Error) in
+            let values = try await database.read { connection throws(ISO.`9075`.Error) in
+                try connection.fetchAll("SELECT \(ISO.`9075`.Value.int(41)) + 1, \(ISO.`9075`.Value.text("ok"))") { row throws(ISO.`9075`.Error) in
                     [try row.value(at: 0), try row.value(at: 1)]
                 }
             }
@@ -46,11 +46,11 @@
 
         @Test func `an instant binds as TIMESTAMPTZ independent of the session time zone`() async throws {
             let instant = Time.Instant(secondsSinceUnixEpoch: 1_767_225_600)
-            let epoch = try await database.read { connection throws(ISO_9075.Error) in
+            let epoch = try await database.read { connection throws(ISO.`9075`.Error) in
                 _ = try connection.execute("SET LOCAL TIME ZONE 'America/New_York'")
                 return try connection.fetchAll(
-                    "SELECT CAST(extract(epoch FROM \(ISO_9075.Value.timestamp(instant))) AS BIGINT)"
-                ) { row throws(ISO_9075.Error) in try row.value(at: 0) }
+                    "SELECT CAST(extract(epoch FROM \(ISO.`9075`.Value.timestamp(instant))) AS BIGINT)"
+                ) { row throws(ISO.`9075`.Error) in try row.value(at: 0) }
             }
             #expect(epoch == [.int(1_767_225_600)])
         }
@@ -59,10 +59,10 @@
             let instant = Time.Instant(secondsSinceUnixEpoch: 1_767_225_600)
             let bytes = [0x01, 0xAB].map(Byte.init(bitPattern:))
             let sql = try PostgreSQL().inline(
-                "SELECT CAST(extract(epoch FROM \(ISO_9075.Value.timestamp(instant))) AS BIGINT), \(ISO_9075.Value.blob(bytes))"
+                "SELECT CAST(extract(epoch FROM \(ISO.`9075`.Value.timestamp(instant))) AS BIGINT), \(ISO.`9075`.Value.blob(bytes))"
             )
-            let values = try await database.read { connection throws(ISO_9075.Error) in
-                try connection.fetchAll("\(raw: sql)") { row throws(ISO_9075.Error) in [try row.value(at: 0), try row.value(at: 1)] }
+            let values = try await database.read { connection throws(ISO.`9075`.Error) in
+                try connection.fetchAll("\(raw: sql)") { row throws(ISO.`9075`.Error) in [try row.value(at: 0), try row.value(at: 1)] }
             }
             #expect(values == [[.int(1_767_225_600), .blob(bytes)]])
         }
@@ -73,9 +73,9 @@
                 try Time.Instant(secondsSinceUnixEpoch: 946_684_800, nanosecondFraction: 999),
                 try Time.Instant(secondsSinceUnixEpoch: -1, nanosecondFraction: 999_999_999),
             ]
-            let fetched = try await database.read { connection throws(ISO_9075.Error) in
-                try instants.map { instant throws(ISO_9075.Error) in
-                    try connection.fetchAll("SELECT \(ISO_9075.Value.timestamp(instant)), pg_typeof(\(ISO_9075.Value.timestamp(instant)))::TEXT") { row throws(ISO_9075.Error) in
+            let fetched = try await database.read { connection throws(ISO.`9075`.Error) in
+                try instants.map { instant throws(ISO.`9075`.Error) in
+                    try connection.fetchAll("SELECT \(ISO.`9075`.Value.timestamp(instant)), pg_typeof(\(ISO.`9075`.Value.timestamp(instant)))::TEXT") { row throws(ISO.`9075`.Error) in
                         [try row.value(at: 0), try row.value(at: 1)]
                     }
                 }
@@ -92,14 +92,14 @@
         @Test func `an instant keeps its microseconds through a row`() async throws {
             var draft = try LiveFixtures.sample("microseconds")
             draft.createdAt = try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 654_321_987)
-            let fetched = try await database.write { [draft] connection throws(ISO_9075.Error) in
+            let fetched = try await database.write { [draft] connection throws(ISO.`9075`.Error) in
                 try Sample.insert { draft }.returning(\.createdAt).fetch.one(connection)
             }
             #expect(fetched == (try Time.Instant(secondsSinceUnixEpoch: 1_767_225_600, nanosecondFraction: 654_321_000)))
         }
 
         @Test func `an empty array binds with its element's array type`() async throws {
-            let kinds: [(ISO_9075.Value.Kind, String)] = [
+            let kinds: [(ISO.`9075`.Value.Kind, String)] = [
                 (.bool, "boolean[]"),
                 (.int, "bigint[]"),
                 (.double, "double precision[]"),
@@ -108,11 +108,11 @@
                 (.timestamp, "timestamp with time zone[]"),
                 (.uuid, "uuid[]"),
             ]
-            let types = try await database.read { connection throws(ISO_9075.Error) in
-                try kinds.map { kind, _ throws(ISO_9075.Error) in
+            let types = try await database.read { connection throws(ISO.`9075`.Error) in
+                try kinds.map { kind, _ throws(ISO.`9075`.Error) in
                     try connection.fetchAll(
-                        "SELECT pg_typeof(\(ISO_9075.Value.array([], of: kind)))::TEXT, cardinality(\(ISO_9075.Value.array([], of: kind)))"
-                    ) { row throws(ISO_9075.Error) in [try row.value(at: 0), try row.value(at: 1)] }
+                        "SELECT pg_typeof(\(ISO.`9075`.Value.array([], of: kind)))::TEXT, cardinality(\(ISO.`9075`.Value.array([], of: kind)))"
+                    ) { row throws(ISO.`9075`.Error) in [try row.value(at: 0), try row.value(at: 1)] }
                 }
             }
             #expect(types == kinds.map { _, type in [[.text(type), .int(0)]] })
@@ -121,7 +121,7 @@
         @Test func `an empty array round-trips through a typed column`() async throws {
             var draft = try LiveFixtures.sample("empty tags")
             draft.tags = []
-            let fetched = try await database.write { [draft] connection throws(ISO_9075.Error) in
+            let fetched = try await database.write { [draft] connection throws(ISO.`9075`.Error) in
                 try Sample.insert { draft }.returning(\.tags).fetch.one(connection)
             }
             #expect(fetched == [])
@@ -129,7 +129,7 @@
 
         @Test func `a cast uses the PostgreSQL type names`() async throws {
             let draft = try LiveFixtures.sample("cast", count: 7)
-            let texts = try await database.write { connection throws(ISO_9075.Error) in
+            let texts = try await database.write { connection throws(ISO.`9075`.Error) in
                 try Sample.insert { draft }.execute(connection)
                 return try Sample.where { $0.name.eq("cast") }.select { ($0.count.cast(as: String.self), $0.count.cast()) }.fetch.all(connection)
             }

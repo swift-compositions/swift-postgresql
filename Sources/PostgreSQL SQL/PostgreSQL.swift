@@ -3,19 +3,19 @@ public import ISO_9075_Foundation
 internal import RFC_4122
 internal import Time
 
-public struct PostgreSQL: ISO_9075.Dialect {
+public struct PostgreSQL: ISO.`9075`.Dialect {
     public init() {}
 }
 
 extension PostgreSQL {
     public func placeholder(_ offset: Int) -> String { "$\(offset)" }
 
-    public func literal(_ value: ISO_9075.Value) throws(ISO_9075.Value.Failure) -> String {
+    public func literal(_ value: ISO.`9075`.Value) throws(ISO.`9075`.Value.Failure) -> String {
         switch value {
         case .timestamp(let instant):
-            "TIMESTAMPTZ " + ISO_9075.Literal.character(try ISO_9075.Literal.timestamp(instant) + "+00")
+            "TIMESTAMPTZ " + ISO.`9075`.Literal.character(try ISO.`9075`.Literal.timestamp(instant) + "+00")
         case .blob(let bytes):
-            ISO_9075.Literal.character(
+            ISO.`9075`.Literal.character(
                 "\\x"
                     + bytes.map { byte in
                         let hex = String(byte.bitPattern, radix: 16)
@@ -23,7 +23,7 @@ extension PostgreSQL {
                     }.joined()
             ) + "::BYTEA"
         case .array(let values, let kind):
-            "ARRAY[" + (try values.map { value throws(ISO_9075.Value.Failure) in try literal(value) }).joined(separator: ", ") + "]::"
+            "ARRAY[" + (try values.map { value throws(ISO.`9075`.Value.Failure) in try literal(value) }).joined(separator: ", ") + "]::"
                 + typeName(kind) + "[]"
         default:
             try value.literal
@@ -44,7 +44,7 @@ extension PostgreSQL {
 
     public var binaryLargeObject: String { "BYTEA" }
 
-    private func typeName(_ kind: ISO_9075.Value.Kind) -> String {
+    private func typeName(_ kind: ISO.`9075`.Value.Kind) -> String {
         switch kind {
         case .bool: Bool.typeName
         case .int: Int64.typeName

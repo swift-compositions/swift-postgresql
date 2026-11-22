@@ -29,18 +29,18 @@
                 self.channel = channel
             }
 
-            public mutating func next() async throws(ISO_9075.Error) -> Payload? {
+            public mutating func next() async throws(ISO.`9075`.Error) -> Payload? {
                 try await next(isolation: #isolation)
             }
 
-            public mutating func next(isolation actor: isolated (any Actor)?) async throws(ISO_9075.Error) -> Payload? {
+            public mutating func next(isolation actor: isolated (any Actor)?) async throws(ISO.`9075`.Error) -> Payload? {
                 let notification: PostgresNotification?
                 do {
                     notification = try await notifications.next(isolation: actor)
                 } catch {
                     throw .connection("\(error) while listening on \(channel.name)")
                 }
-                return try notification.map { notification throws(ISO_9075.Error) in try channel.decode(notification.payload) }
+                return try notification.map { notification throws(ISO.`9075`.Error) in try channel.decode(notification.payload) }
             }
         }
     }
@@ -49,13 +49,13 @@
         @concurrent
         public func listen<Payload, Value: Sendable>(
             on channel: PostgreSQL.Notification.Channel<Payload>,
-            consume: (PostgreSQL.Notification.Stream<Payload>) async throws(ISO_9075.Error) -> Value
-        ) async throws(ISO_9075.Error) -> Value {
-            let result: Result<Value, ISO_9075.Error>
+            consume: (PostgreSQL.Notification.Stream<Payload>) async throws(ISO.`9075`.Error) -> Value
+        ) async throws(ISO.`9075`.Error) -> Value {
+            let result: Result<Value, ISO.`9075`.Error>
             do {
                 result = try await engine.client.withConnection { postgres in
                     try await postgres.listen(on: channel.name) { notifications in
-                        do throws(ISO_9075.Error) {
+                        do throws(ISO.`9075`.Error) {
                             return .success(try await consume(PostgreSQL.Notification.Stream(notifications, channel: channel)))
                         } catch {
                             return .failure(error)

@@ -33,7 +33,7 @@
             defer { Task { await database.close() } }
             let rows = try await database.read { connection in
                 try connection.fetchAll("SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()") {
-                    row throws(ISO_9075.Error) -> ISO_9075.Value in try row.value(at: 0)
+                    row throws(ISO.`9075`.Error) -> ISO.`9075`.Value in try row.value(at: 0)
                 }
             }
             return rows == [.bool(true)]

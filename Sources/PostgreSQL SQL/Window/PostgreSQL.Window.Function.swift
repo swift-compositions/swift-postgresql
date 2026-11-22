@@ -3,14 +3,14 @@ public import SQL
 
 extension PostgreSQL.Window {
     public struct Function<QueryValue>: QueryExpression, Sendable {
-        let call: ISO_9075.Fragment
-        let window: ISO_9075.Fragment
+        let call: ISO.`9075`.Fragment
+        let window: ISO.`9075`.Fragment
 
-        init(_ name: String, _ arguments: [ISO_9075.Fragment] = []) {
+        init(_ name: String, _ arguments: [ISO.`9075`.Fragment] = []) {
             self.init(call: "\(raw: name)(\(arguments.joined(separator: ", ")))", window: "()")
         }
 
-        init(call: ISO_9075.Fragment, window: ISO_9075.Fragment) {
+        init(call: ISO.`9075`.Fragment, window: ISO.`9075`.Fragment) {
             self.call = call
             self.window = window
         }
@@ -31,7 +31,7 @@ extension PostgreSQL.Window {
             Self(call: call, window: "\(quote: name)")
         }
 
-        public var queryFragment: ISO_9075.Fragment {
+        public var queryFragment: ISO.`9075`.Fragment {
             "\(call) OVER \(window)"
         }
     }

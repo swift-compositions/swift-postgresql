@@ -18,7 +18,7 @@
         ///
         /// The database connects on first use, and closes its connections when ``close()`` is called or the last copy
         /// of it is gone.
-        public struct Database: ISO_9075.Database, Sendable {
+        public struct Database: ISO.`9075`.Database, Sendable {
             public typealias Connection = PostgreSQL.Connection
 
             package let engine: Engine
@@ -119,44 +119,44 @@
     extension PostgreSQL.Database {
         @_disfavoredOverload
         public func read<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
-        ) async throws(ISO_9075.Error) -> Value {
+            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
+        ) async throws(ISO.`9075`.Error) -> Value {
             try await interface { try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body) }
         }
 
         @_disfavoredOverload
         public func write<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
-        ) async throws(ISO_9075.Error) -> Value {
+            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
+        ) async throws(ISO.`9075`.Error) -> Value {
             try await interface { try await run(begin: "BEGIN", end: "COMMIT", body) }
         }
 
         @_disfavoredOverload
         public func write<Value: Sendable>(
             isolation: PostgreSQL.Isolation,
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
-        ) async throws(ISO_9075.Error) -> Value {
+            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
+        ) async throws(ISO.`9075`.Error) -> Value {
             try await interface { try await run(begin: isolation.begin, end: "COMMIT", body) }
         }
 
         /// Runs `body` in a transaction that is always rolled back.
         public func withRollback<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
-        ) async throws(ISO_9075.Error) -> Value {
+            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
+        ) async throws(ISO.`9075`.Error) -> Value {
             try await interface { try await run(begin: "BEGIN", end: "ROLLBACK", body) }
         }
 
         @_disfavoredOverload
         public func writeWithoutTransaction<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO_9075.Error) -> Value
-        ) async throws(ISO_9075.Error) -> Value {
+            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
+        ) async throws(ISO.`9075`.Error) -> Value {
             try await interface { try await run(begin: nil, end: nil, body) }
         }
 
         @_disfavoredOverload
         public func read<Value: Sendable, Thrown: Swift.Error>(
             _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
-        ) async throws(ISO_9075.Failure<Thrown>) -> Value {
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
             try await separating(Thrown.self) {
                 try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
             }
@@ -165,7 +165,7 @@
         @_disfavoredOverload
         public func write<Value: Sendable, Thrown: Swift.Error>(
             _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
-        ) async throws(ISO_9075.Failure<Thrown>) -> Value {
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
             try await separating(Thrown.self) {
                 try await run(begin: "BEGIN", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
             }
@@ -174,7 +174,7 @@
         @_disfavoredOverload
         public func withRollback<Value: Sendable, Thrown: Swift.Error>(
             _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
-        ) async throws(ISO_9075.Failure<Thrown>) -> Value {
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
             try await separating(Thrown.self) {
                 try await run(begin: "BEGIN", end: "ROLLBACK") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
             }
@@ -185,25 +185,25 @@
         private func separating<T, Thrown: Swift.Error>(
             _ thrown: Thrown.Type,
             _ operation: () async throws -> T
-        ) async throws(ISO_9075.Failure<Thrown>) -> T {
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> T {
             do {
                 return try await operation()
             } catch let raised as Raised<Thrown> {
                 throw .body(raised.thrown)
-            } catch let error as ISO_9075.Error {
+            } catch let error as ISO.`9075`.Error {
                 throw .database(error)
             } catch {
-                throw .database(ISO_9075.Error(PostgreSQL.Error.translated(error)))
+                throw .database(ISO.`9075`.Error(PostgreSQL.Error.translated(error)))
             }
         }
 
-        private func interface<T>(_ operation: () async throws -> T) async throws(ISO_9075.Error) -> T {
+        private func interface<T>(_ operation: () async throws -> T) async throws(ISO.`9075`.Error) -> T {
             do {
                 return try await operation()
-            } catch let error as ISO_9075.Error {
+            } catch let error as ISO.`9075`.Error {
                 throw error
             } catch {
-                throw ISO_9075.Error(PostgreSQL.Error.translated(error))
+                throw ISO.`9075`.Error(PostgreSQL.Error.translated(error))
             }
         }
     }
@@ -214,8 +214,8 @@
         /// ``PostgreSQL/Error``; what `body` throws comes out unchanged, but for the connection's own errors, which
         /// come out as the ``PostgreSQL/Error`` they were.
         private func run<T: Sendable>(
-            begin: ISO_9075.Fragment?,
-            end: ISO_9075.Fragment?,
+            begin: ISO.`9075`.Fragment?,
+            end: ISO.`9075`.Fragment?,
             _ body: @Sendable (PostgreSQL.Connection) throws -> T
         ) async throws -> T {
             try await leased { connection, cancellation in
@@ -266,7 +266,7 @@
                             }
                             do {
                                 return .success(try body(connection, cancellation))
-                            } catch let error as ISO_9075.Error {
+                            } catch let error as ISO.`9075`.Error {
                                 return .failure(connection.failures.original(of: error) ?? error)
                             } catch {
                                 return .failure(error)
@@ -373,7 +373,7 @@
 
     extension PostgreSQL.Connection {
         /// Executes `fragment`, throwing what fails as ``PostgreSQL/Error``.
-        func run(_ fragment: ISO_9075.Fragment) throws(PostgreSQL.Error) {
+        func run(_ fragment: ISO.`9075`.Fragment) throws(PostgreSQL.Error) {
             do {
                 _ = try execute(fragment)
             } catch {

@@ -22,7 +22,7 @@ import Time
     func `extract renders integer fields`(field: PostgreSQL.DateTime.Field<Int>, name: String) throws {
         #expect(
             try PostgreSQL().render(timestamp.extract(field).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"EXTRACT(\#(name) FROM "events"."timestamp")"#,
                     values: []
                 )
@@ -39,7 +39,7 @@ import Time
     @Test func `extract compares against a bound value`() throws {
         #expect(
             try PostgreSQL().render(timestamp.extract(.year).eq(2024).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"(EXTRACT(YEAR FROM "events"."timestamp")) = ($1)"#,
                     values: [.int(2024)]
                 )
@@ -50,7 +50,7 @@ import Time
     func `date_trunc inlines the precision`(precision: PostgreSQL.DateTime.Precision) throws {
         #expect(
             try PostgreSQL().render(timestamp.dateTrunc(precision).queryFragment)
-                == ISO_9075.Rendering(
+                == ISO.`9075`.Rendering(
                     sql: #"DATE_TRUNC('\#(precision.rawValue)', "events"."timestamp")"#,
                     values: []
                 )

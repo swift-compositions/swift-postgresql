@@ -9,7 +9,7 @@ extension Table {
         configuration: PostgreSQL.TextSearch.Configuration
     ) -> SQLQueryExpression<()> {
         precondition(!sources.isEmpty, "a search vector needs at least one source column")
-        let vector = sources.map { source -> ISO_9075.Fragment in
+        let vector = sources.map { source -> ISO.`9075`.Fragment in
             "setweight(to_tsvector(\(configuration.queryFragment), coalesce(\(quote: source.column), '')), \(text: source.weight.rawValue))"
         }
         return SQLQueryExpression(

@@ -11,10 +11,10 @@ extension PostgreSQL.Trigger {
             self.columns = columns
         }
 
-        var queryFragment: ISO_9075.Fragment {
+        var queryFragment: ISO.`9075`.Fragment {
             columns.isEmpty
                 ? "\(raw: keyword)"
-                : "\(raw: keyword) OF \(columns.map { column -> ISO_9075.Fragment in "\(quote: column)" }.joined(separator: ", "))"
+                : "\(raw: keyword) OF \(columns.map { column -> ISO.`9075`.Fragment in "\(quote: column)" }.joined(separator: ", "))"
         }
     }
 }

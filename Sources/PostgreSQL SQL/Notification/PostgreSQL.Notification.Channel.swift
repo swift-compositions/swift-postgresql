@@ -5,13 +5,13 @@ public import SQL
 extension PostgreSQL.Notification {
     public struct Channel<Payload>: Sendable {
         public let name: String
-        let encoding: @Sendable (Payload) -> ISO_9075.Fragment
-        let decoding: @Sendable (String) throws(ISO_9075.Error) -> Payload
+        let encoding: @Sendable (Payload) -> ISO.`9075`.Fragment
+        let decoding: @Sendable (String) throws(ISO.`9075`.Error) -> Payload
 
         init(
             name: String,
-            encode: @escaping @Sendable (Payload) -> ISO_9075.Fragment,
-            decode: @escaping @Sendable (String) throws(ISO_9075.Error) -> Payload
+            encode: @escaping @Sendable (Payload) -> ISO.`9075`.Fragment,
+            decode: @escaping @Sendable (String) throws(ISO.`9075`.Error) -> Payload
         ) {
             precondition(!name.isEmpty, "a notification channel needs a name")
             precondition(name.utf8.count <= 63, "PostgreSQL truncates channel names beyond 63 bytes: \(name)")
@@ -25,7 +25,7 @@ extension PostgreSQL.Notification {
 
 extension PostgreSQL.Notification.Channel where Payload == String {
     public init(_ name: String) {
-        self.init(name: name, encode: { "\(ISO_9075.Value.text($0))" }, decode: { $0 })
+        self.init(name: name, encode: { "\(ISO.`9075`.Value.text($0))" }, decode: { $0 })
     }
 }
 
@@ -34,7 +34,7 @@ extension PostgreSQL.Notification.Channel where Payload: Codable & SendableMetat
         self.init(
             name: name,
             encode: { "\(PostgreSQL.JSONB(queryOutput: $0).textBinding)" },
-            decode: { payload throws(ISO_9075.Error) in
+            decode: { payload throws(ISO.`9075`.Error) in
                 do {
                     return try PostgreSQL.JSONB<Payload>(text: payload).queryOutput
                 } catch {
@@ -50,7 +50,7 @@ extension PostgreSQL.Notification.Channel {
         SQLQueryExpression("SELECT pg_notify(\(bind: name), \(encoding(payload)))")
     }
 
-    public func decode(_ payload: String) throws(ISO_9075.Error) -> Payload {
+    public func decode(_ payload: String) throws(ISO.`9075`.Error) -> Payload {
         try decoding(payload)
     }
 

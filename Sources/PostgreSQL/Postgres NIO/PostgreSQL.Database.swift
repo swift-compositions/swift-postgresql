@@ -260,6 +260,9 @@
             let timeout = configuration.acquireTimeout
             let (client, clock, attempts) = (client, clock, attempts)
 
+            // Counted before the lease is asked for: an attempt that fails at once is then not missed.
+            let failures = attempts.failures
+
             // Holds the lease: it ends when `released` fires, which is when the body is over.
             let holder = Task {
                 do {
@@ -274,7 +277,6 @@
                 }
             }
             // The pool retries a failed connection without end: a lease that waits learns why from outside it.
-            let failures = attempts.failures
             let watcher = Task {
                 var seen = failures
                 while !Task.isCancelled {

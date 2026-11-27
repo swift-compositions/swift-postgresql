@@ -34,11 +34,12 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.29.0"),
         .package(
             url: "https://github.com/swift-compositions/swift-sql.git",
-            branch: "main",
+            branch: "lent-connection",
             traits: [.trait(name: "Tagged", condition: .when(traits: ["Tagged"]))]
         ),
         .package(url: "https://github.com/swift-atoms/swift-byte.git", branch: "main"),
-        .package(url: "https://github.com/swift-iso/swift-iso-9075.git", branch: "main"),
+        .package(url: "https://github.com/swift-iso/swift-iso-9075.git", branch: "lent-connection"),
+        .package(url: "https://github.com/swift-compositions/swift-threads.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-4122.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-tagged.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-time.git", branch: "main"),
@@ -72,6 +73,7 @@ let package = Package(
                 .product(name: "Time", package: "swift-time"),
                 .product(name: "RFC 4122", package: "swift-rfc-4122"),
                 .product(name: "PostgresNIO", package: "postgres-nio", condition: postgresNIO),
+                .product(name: "Thread Actor", package: "swift-threads", condition: postgresNIO),
                 .product(name: "NIOCore", package: "swift-nio", condition: postgresNIO),
                 .product(name: "NIOPosix", package: "swift-nio", condition: postgresNIO),
                 .product(name: "NIOSSL", package: "swift-nio-ssl", condition: postgresNIO),

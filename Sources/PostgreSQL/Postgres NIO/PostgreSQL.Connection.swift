@@ -7,24 +7,23 @@
     internal import Synchronization
 
     extension PostgreSQL {
-        /// One open connection, for the duration of a ``PostgreSQL/Database`` read or write: what its closure is
-        /// given, and what every typed statement executes against.
+        /// One open connection, lent to the body of a ``PostgreSQL/Database`` read or write for as long as the body
+        /// runs: what every typed statement executes against.
         ///
-        /// A connection is valid only inside the closure it was given to; it must not escape it.
-        public struct Connection: ISO.`9075`.Connection, Sendable {
-            public let dialect = PostgreSQL()
-            package let postgres: PostgresConnection
-            let logger: Logger
-            let failures: Failures
+        /// A connection is neither copyable nor escapable. A body cannot return it, store it, or capture it in a task
+        /// or an escaping closure, so no statement runs on it after it went back to the pool.
+        public struct Connection: ISO.`9075`.Connection, ~Copyable, ~Escapable {
+            let core: Core
 
-            package init(_ postgres: PostgresConnection, logger: Logger) {
-                self.postgres = postgres
-                self.logger = logger
-                self.failures = Failures()
+            @_lifetime(borrow core)
+            init(_ core: borrowing Core) {
+                self.core = copy core
             }
 
+            public var dialect: PostgreSQL { PostgreSQL() }
+
             public func execute(_ statement: ISO.`9075`.Rendering) throws(ISO.`9075`.Error) -> Int {
-                statement.sql.isEmpty ? 0 : try result(statement).metadata.rows ?? 0
+                statement.sql.isEmpty ? 0 : try core.result(statement).metadata.rows ?? 0
             }
 
             public func fetchAll<Value>(
@@ -33,7 +32,26 @@
             ) throws(ISO.`9075`.Error) -> [Value] {
                 statement.sql.isEmpty
                     ? []
-                    : try result(statement).rows.map { row throws(ISO.`9075`.Error) in try decode(PostgreSQL.Row(row)) }
+                    : try core.result(statement).rows.map { row throws(ISO.`9075`.Error) in try decode(PostgreSQL.Row(row)) }
+            }
+        }
+    }
+
+    @available(*, unavailable)
+    extension PostgreSQL.Connection: Sendable {}
+
+    extension PostgreSQL.Connection {
+        /// What a lease of the pool gives: the engine's connection, and the errors it reported. Sendable, as the
+        /// engine's connection is; the lent ``PostgreSQL/Connection`` over it is what a body sees.
+        package final class Core: Sendable {
+            package let postgres: PostgresConnection
+            let logger: Logger
+            let failures: Failures
+
+            package init(_ postgres: PostgresConnection, logger: Logger) {
+                self.postgres = postgres
+                self.logger = logger
+                self.failures = Failures()
             }
 
             /// Closes the connection, so the pool opens a new one in its place: for a connection whose transaction
@@ -56,6 +74,15 @@
                     let reported = ISO.`9075`.Error(failure)
                     failures.record(failure, as: reported)
                     throw reported
+                }
+            }
+
+            /// Executes `fragment`, throwing what fails as ``PostgreSQL/Error``.
+            func run(_ fragment: ISO.`9075`.Fragment) throws(PostgreSQL.Error) {
+                do throws(ISO.`9075`.Error) {
+                    _ = try PostgreSQL.Connection(self).execute(fragment)
+                } catch {
+                    throw failures.original(of: error) ?? PostgreSQL.Error(error)
                 }
             }
 
@@ -100,7 +127,7 @@
     extension PostgreSQL.Connection {
         public func withSavepoint<Value>(
             _ name: String,
-            _ body: (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
+            _ body: (borrowing PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
         ) throws(ISO.`9075`.Error) -> Value {
             let savepoint = ISO.`9075`.Identifier(name)
             _ = try execute("SAVEPOINT \(savepoint)")
@@ -119,7 +146,7 @@
         }
 
         public func withSavepoint<Value>(
-            _ body: (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
+            _ body: (borrowing PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
         ) throws(ISO.`9075`.Error) -> Value {
             try withSavepoint("savepoint_\(PostgreSQL.Connection.names.add(1, ordering: .relaxed).newValue)", body)
         }

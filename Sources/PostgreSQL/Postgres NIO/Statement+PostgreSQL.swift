@@ -4,6 +4,7 @@
     public import SQL
 
     extension PostgreSQL.Connection {
+        @_lifetime(borrow self)
         public func cursor<Value>(
             _ statement: ISO.`9075`.Fragment,
             batch: Int,
@@ -14,8 +15,9 @@
     }
 
     extension SQL.Statement {
+        @_lifetime(borrow connection)
         public func fetchCursor(
-            _ connection: PostgreSQL.Connection,
+            _ connection: borrowing PostgreSQL.Connection,
             batch: Int
         ) throws(ISO.`9075`.Error) -> PostgreSQL.Cursor<QueryValue.QueryOutput> where QueryValue: QueryRepresentable {
             try connection.cursor(query, batch: batch) { decoder throws(QueryDecodingError) in
@@ -23,8 +25,9 @@
             }
         }
 
+        @_lifetime(borrow connection)
         public func fetchCursor<each Value: QueryRepresentable>(
-            _ connection: PostgreSQL.Connection,
+            _ connection: borrowing PostgreSQL.Connection,
             batch: Int
         ) throws(ISO.`9075`.Error) -> PostgreSQL.Cursor<(repeat (each Value).QueryOutput)>
         where QueryValue == (repeat each Value) {
@@ -35,8 +38,9 @@
     }
 
     extension SelectStatement where QueryValue == (), Joins == () {
+        @_lifetime(borrow connection)
         public func fetchCursor(
-            _ connection: PostgreSQL.Connection,
+            _ connection: borrowing PostgreSQL.Connection,
             batch: Int
         ) throws(ISO.`9075`.Error) -> PostgreSQL.Cursor<From.QueryOutput> {
             try connection.cursor(query, batch: batch) { decoder throws(QueryDecodingError) in
@@ -46,8 +50,9 @@
     }
 
     extension SQL.Table {
+        @_lifetime(borrow connection)
         public static func fetchCursor(
-            _ connection: PostgreSQL.Connection,
+            _ connection: borrowing PostgreSQL.Connection,
             batch: Int
         ) throws(ISO.`9075`.Error) -> PostgreSQL.Cursor<QueryOutput> {
             try all.fetchCursor(connection, batch: batch)

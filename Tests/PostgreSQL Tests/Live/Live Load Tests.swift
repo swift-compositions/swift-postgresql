@@ -24,7 +24,7 @@
             return try PostgreSQL.Database(configuration: configuration)
         }
 
-        static func int(_ connection: PostgreSQL.Connection, _ query: ISO.`9075`.Fragment) throws -> Int64? {
+        static func int(_ connection: borrowing PostgreSQL.Connection, _ query: ISO.`9075`.Fragment) throws -> Int64? {
             let values = try connection.fetchAll(query) { row throws(ISO.`9075`.Error) -> ISO.`9075`.Value in
                 try row.value(at: 0)
             }

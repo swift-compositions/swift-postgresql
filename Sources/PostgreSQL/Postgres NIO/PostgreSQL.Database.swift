@@ -3,18 +3,18 @@
     public import ISO_9075_Call_Level_Interface
     internal import Logging
     internal import NIOCore
-    internal import NIOPosix
     internal import PostgresNIO
     internal import Synchronization
 
     extension PostgreSQL {
         /// A PostgreSQL database: a pool of up to ``PostgreSQL/Configuration/poolSize`` connections to one server.
         ///
-        /// Reads and writes run their closure on a connection of their own, inside a transaction, on a thread of the
-        /// database's own: the closure is synchronous, and a connection's statements block that thread, never a
-        /// task's. Each comes in three forms: one whose closure throws anything, one whose closure throws
-        /// ``PostgreSQL/Error``, and the ones whose closure throws `ISO_9075.Error`, which are the call-level interface
-        /// swift-sql's `Migrator` runs on.
+        /// A read or a write lends a connection of the pool to its body, inside a transaction, on a thread of the
+        /// database's own: the body is synchronous, and a connection's statements block that thread, never a
+        /// task's. The body is `sending` and so is its result, so neither has to be Sendable; a body returns values
+        /// it made, not ones it captured. Each scope comes in three forms: one whose body throws anything, one whose
+        /// body throws ``PostgreSQL/Error``, and the ones of the call-level interface, whose body throws
+        /// `ISO_9075.Error` or an error of its own; swift-sql's `Migrator` runs on those.
         ///
         /// The database connects on first use, and closes its connections when ``close()`` is called or the last copy
         /// of it is gone.
@@ -39,299 +39,293 @@
         /// The configuration the database was made with.
         public var configuration: PostgreSQL.Configuration { engine.configuration }
 
-        /// Closes every connection and stops the database's threads. A read or write after this throws
+        /// Closes every connection. A read or write after this throws
         /// ``PostgreSQL/Error/Kind/closed``.
         public func close() async {
             await engine.close()
         }
     }
 
+    // MARK: - A body that throws anything, or ``PostgreSQL/Error``
+
     extension PostgreSQL.Database {
-        /// Runs `body` in a read-only transaction. What `body` throws comes out unchanged, but for a failure of the
-        /// database itself, which comes out as ``PostgreSQL/Error``.
+        /// Runs `body` in a read-only transaction. What `body` throws comes out unchanged, but for the connection's
+        /// own errors, which come out as the ``PostgreSQL/Error`` they were, as a failure of the database does.
         @_disfavoredOverload
-        public func read<T: Sendable>(_ body: @Sendable (PostgreSQL.Connection) throws -> T) async throws -> T {
-            try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body)
+        public nonisolated(nonsending) func read<T>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws -> sending T
+        ) async throws -> sending T {
+            do throws(Fault<any Swift.Error>) {
+                return try await engine.run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure): throw failure
+                case .body(let thrown, let original): throw original ?? thrown
+                }
+            }
         }
 
-        /// Runs `body` in a transaction, committed when `body` returns and rolled back when it throws. What `body`
-        /// throws comes out unchanged, but for a failure of the database itself, which comes out as
-        /// ``PostgreSQL/Error``.
+        public nonisolated(nonsending) func read<T>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws(PostgreSQL.Error) -> sending T
+        ) async throws(PostgreSQL.Error) -> sending T {
+            do throws(Fault<PostgreSQL.Error>) {
+                return try await engine.run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure), .body(let failure, _): throw failure
+                }
+            }
+        }
+
+        /// Runs `body` in a transaction, committed when `body` returns and rolled back when it throws.
         @_disfavoredOverload
-        public func write<T: Sendable>(_ body: @Sendable (PostgreSQL.Connection) throws -> T) async throws -> T {
-            try await run(begin: "BEGIN", end: "COMMIT", body)
+        public nonisolated(nonsending) func write<T>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws -> sending T
+        ) async throws -> sending T {
+            do throws(Fault<any Swift.Error>) {
+                return try await engine.run(begin: "BEGIN", end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure): throw failure
+                case .body(let thrown, let original): throw original ?? thrown
+                }
+            }
+        }
+
+        public nonisolated(nonsending) func write<T>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws(PostgreSQL.Error) -> sending T
+        ) async throws(PostgreSQL.Error) -> sending T {
+            do throws(Fault<PostgreSQL.Error>) {
+                return try await engine.run(begin: "BEGIN", end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure), .body(let failure, _): throw failure
+                }
+            }
         }
 
         /// Runs `body` in a transaction at `isolation`.
         @_disfavoredOverload
-        public func write<T: Sendable>(
+        public nonisolated(nonsending) func write<T>(
             isolation: PostgreSQL.Isolation,
-            _ body: @Sendable (PostgreSQL.Connection) throws -> T
-        ) async throws -> T {
-            try await run(begin: isolation.begin, end: "COMMIT", body)
+            _ body: sending (borrowing PostgreSQL.Connection) throws -> sending T
+        ) async throws -> sending T {
+            do throws(Fault<any Swift.Error>) {
+                return try await engine.run(begin: isolation.begin, end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure): throw failure
+                case .body(let thrown, let original): throw original ?? thrown
+                }
+            }
+        }
+
+        public nonisolated(nonsending) func write<T>(
+            isolation: PostgreSQL.Isolation,
+            _ body: sending (borrowing PostgreSQL.Connection) throws(PostgreSQL.Error) -> sending T
+        ) async throws(PostgreSQL.Error) -> sending T {
+            do throws(Fault<PostgreSQL.Error>) {
+                return try await engine.run(begin: isolation.begin, end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure), .body(let failure, _): throw failure
+                }
+            }
         }
 
         /// Runs `body` outside of any transaction: what it executes commits statement by statement, unless it opens a
         /// transaction itself.
         @_disfavoredOverload
-        public func writeWithoutTransaction<T: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws -> T
-        ) async throws -> T {
-            try await run(begin: nil, end: nil, body)
-        }
-    }
-
-    extension PostgreSQL.Database {
-        public func read<T: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
-        ) async throws(PostgreSQL.Error) -> T {
-            try await typed { try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body) }
-        }
-
-        public func write<T: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
-        ) async throws(PostgreSQL.Error) -> T {
-            try await typed { try await run(begin: "BEGIN", end: "COMMIT", body) }
-        }
-
-        public func write<T: Sendable>(
-            isolation: PostgreSQL.Isolation,
-            _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
-        ) async throws(PostgreSQL.Error) -> T {
-            try await typed { try await run(begin: isolation.begin, end: "COMMIT", body) }
-        }
-
-        public func writeWithoutTransaction<T: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(PostgreSQL.Error) -> T
-        ) async throws(PostgreSQL.Error) -> T {
-            try await typed { try await run(begin: nil, end: nil, body) }
-        }
-
-        private func typed<T>(_ operation: () async throws -> T) async throws(PostgreSQL.Error) -> T {
-            do {
-                return try await operation()
+        public nonisolated(nonsending) func writeWithoutTransaction<T>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws -> sending T
+        ) async throws -> sending T {
+            do throws(Fault<any Swift.Error>) {
+                return try await engine.run(begin: nil, end: nil, body)
             } catch {
-                throw PostgreSQL.Error.translated(error)
-            }
-        }
-    }
-
-    extension PostgreSQL.Database {
-        @_disfavoredOverload
-        public func read<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
-        ) async throws(ISO.`9075`.Error) -> Value {
-            try await interface { try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body) }
-        }
-
-        @_disfavoredOverload
-        public func write<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
-        ) async throws(ISO.`9075`.Error) -> Value {
-            try await interface { try await run(begin: "BEGIN", end: "COMMIT", body) }
-        }
-
-        @_disfavoredOverload
-        public func write<Value: Sendable>(
-            isolation: PostgreSQL.Isolation,
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
-        ) async throws(ISO.`9075`.Error) -> Value {
-            try await interface { try await run(begin: isolation.begin, end: "COMMIT", body) }
-        }
-
-        /// Runs `body` in a transaction that is always rolled back.
-        public func withRollback<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
-        ) async throws(ISO.`9075`.Error) -> Value {
-            try await interface { try await run(begin: "BEGIN", end: "ROLLBACK", body) }
-        }
-
-        @_disfavoredOverload
-        public func writeWithoutTransaction<Value: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(ISO.`9075`.Error) -> Value
-        ) async throws(ISO.`9075`.Error) -> Value {
-            try await interface { try await run(begin: nil, end: nil, body) }
-        }
-
-        @_disfavoredOverload
-        public func read<Value: Sendable, Thrown: Swift.Error>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
-        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
-            try await separating(Thrown.self) {
-                try await run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
-            }
-        }
-
-        @_disfavoredOverload
-        public func write<Value: Sendable, Thrown: Swift.Error>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
-        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
-            try await separating(Thrown.self) {
-                try await run(begin: "BEGIN", end: "COMMIT") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
-            }
-        }
-
-        @_disfavoredOverload
-        public func withRollback<Value: Sendable, Thrown: Swift.Error>(
-            _ body: @Sendable (PostgreSQL.Connection) throws(Thrown) -> Value
-        ) async throws(ISO.`9075`.Failure<Thrown>) -> Value {
-            try await separating(Thrown.self) {
-                try await run(begin: "BEGIN", end: "ROLLBACK") { connection in try Raised.raising { () throws(Thrown) in try body(connection) } }
-            }
-        }
-
-        /// Runs `operation`, which runs a caller's closure through ``Raised/raising(_:)``: what that closure threw
-        /// comes out as the body's failure, and anything else as the database's.
-        private func separating<T, Thrown: Swift.Error>(
-            _ thrown: Thrown.Type,
-            _ operation: () async throws -> T
-        ) async throws(ISO.`9075`.Failure<Thrown>) -> T {
-            do {
-                return try await operation()
-            } catch let raised as Raised<Thrown> {
-                throw .body(raised.thrown)
-            } catch let error as ISO.`9075`.Error {
-                throw .database(error)
-            } catch {
-                throw .database(ISO.`9075`.Error(PostgreSQL.Error.translated(error)))
-            }
-        }
-
-        private func interface<T>(_ operation: () async throws -> T) async throws(ISO.`9075`.Error) -> T {
-            do {
-                return try await operation()
-            } catch let error as ISO.`9075`.Error {
-                throw error
-            } catch {
-                throw ISO.`9075`.Error(PostgreSQL.Error.translated(error))
-            }
-        }
-    }
-
-    extension PostgreSQL.Database {
-        /// Leases a connection, opens `begin`, runs `body` on one of the database's threads, and ends with `end`; rolls
-        /// back when `body` throws or the task was cancelled meanwhile. A failure of the database comes out as
-        /// ``PostgreSQL/Error``; what `body` throws comes out unchanged, but for the connection's own errors, which
-        /// come out as the ``PostgreSQL/Error`` they were.
-        private func run<T: Sendable>(
-            begin: ISO.`9075`.Fragment?,
-            end: ISO.`9075`.Fragment?,
-            _ body: @Sendable (PostgreSQL.Connection) throws -> T
-        ) async throws -> T {
-            try await leased { connection, cancellation in
-                guard let begin, let end else { return try body(connection) }
-                try connection.run(begin)
-                let value: T
-                do {
-                    value = try body(connection)
-                    if cancellation.isCancelled {
-                        throw PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled: rolled back")
-                    }
-                } catch {
-                    do {
-                        try connection.run("ROLLBACK")
-                    } catch let rollback {
-                        throw PostgreSQL.Error(
-                            kind: .closed,
-                            message: "\(error); ROLLBACK failed (\(rollback)) and \(connection.discard())"
-                        )
-                    }
-                    throw error
+                switch error {
+                case .database(let failure): throw failure
+                case .body(let thrown, let original): throw original ?? thrown
                 }
-                try connection.run(end)
-                return value
             }
         }
 
-        /// Runs `body` on a leased connection, on one of the database's threads, telling it whether the calling task
-        /// has been cancelled meanwhile: a thread of the pool runs in no task, so it can't ask itself.
-        private func leased<T: Sendable>(
-            _ body: @Sendable (PostgreSQL.Connection, Cancellation) throws -> T
-        ) async throws -> T {
-            guard !engine.closed.load(ordering: .acquiring) else {
-                throw PostgreSQL.Error(kind: .closed, message: "the database is closed")
+        public nonisolated(nonsending) func writeWithoutTransaction<T>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws(PostgreSQL.Error) -> sending T
+        ) async throws(PostgreSQL.Error) -> sending T {
+            do throws(Fault<PostgreSQL.Error>) {
+                return try await engine.run(begin: nil, end: nil, body)
+            } catch {
+                switch error {
+                case .database(let failure), .body(let failure, _): throw failure
+                }
             }
-            try Task.checkCancellation()
-            let engine = engine
-            let cancellation = Cancellation()
-            return try await withoutActuallyEscaping(body) { body in
-                let handoff = Handoff(body)
-                defer { handoff.clear() }
-                return try await withTaskCancellationHandler {
-                    try await engine.withConnection { postgres in
-                        let connection = PostgreSQL.Connection(postgres, logger: engine.logger)
-                        let result: Result<T, any Swift.Error> = try await engine.threads.runIfActive {
-                            guard let body = handoff.take() else {
-                                return .failure(PostgreSQL.Error(kind: .cancelled, message: "the work was abandoned"))
-                            }
-                            do {
-                                return .success(try body(connection, cancellation))
-                            } catch let error as ISO.`9075`.Error {
-                                return .failure(connection.failures.original(of: error) ?? error)
-                            } catch {
-                                return .failure(error)
-                            }
-                        }
-                        return try result.get()
-                    }
-                } onCancel: {
-                    cancellation.cancel()
+        }
+    }
+
+    // MARK: - The call-level interface
+
+    extension PostgreSQL.Database {
+        @_disfavoredOverload
+        public nonisolated(nonsending) func read<Value, Thrown: Swift.Error>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws(Thrown) -> sending Value
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
+            do throws(Fault<Thrown>) {
+                return try await engine.run(begin: "BEGIN TRANSACTION READ ONLY", end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure): throw .database(ISO.`9075`.Error(failure))
+                case .body(let thrown, _): throw .body(thrown)
+                }
+            }
+        }
+
+        @_disfavoredOverload
+        public nonisolated(nonsending) func write<Value, Thrown: Swift.Error>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws(Thrown) -> sending Value
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
+            do throws(Fault<Thrown>) {
+                return try await engine.run(begin: "BEGIN", end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure): throw .database(ISO.`9075`.Error(failure))
+                case .body(let thrown, _): throw .body(thrown)
+                }
+            }
+        }
+
+        @_disfavoredOverload
+        public nonisolated(nonsending) func withRollback<Value, Thrown: Swift.Error>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws(Thrown) -> sending Value
+        ) async throws(ISO.`9075`.Failure<Thrown>) -> sending Value {
+            do throws(Fault<Thrown>) {
+                return try await engine.run(begin: "BEGIN", end: "ROLLBACK", body)
+            } catch {
+                switch error {
+                case .database(let failure): throw .database(ISO.`9075`.Error(failure))
+                case .body(let thrown, _): throw .body(thrown)
+                }
+            }
+        }
+
+        @_disfavoredOverload
+        public nonisolated(nonsending) func write<Value>(
+            isolation: PostgreSQL.Isolation,
+            _ body: sending (borrowing PostgreSQL.Connection) throws(ISO.`9075`.Error) -> sending Value
+        ) async throws(ISO.`9075`.Error) -> sending Value {
+            do throws(Fault<ISO.`9075`.Error>) {
+                return try await engine.run(begin: isolation.begin, end: "COMMIT", body)
+            } catch {
+                switch error {
+                case .database(let failure): throw ISO.`9075`.Error(failure)
+                case .body(let thrown, _): throw thrown
+                }
+            }
+        }
+
+        @_disfavoredOverload
+        public nonisolated(nonsending) func writeWithoutTransaction<Value>(
+            _ body: sending (borrowing PostgreSQL.Connection) throws(ISO.`9075`.Error) -> sending Value
+        ) async throws(ISO.`9075`.Error) -> sending Value {
+            do throws(Fault<ISO.`9075`.Error>) {
+                return try await engine.run(begin: nil, end: nil, body)
+            } catch {
+                switch error {
+                case .database(let failure): throw ISO.`9075`.Error(failure)
+                case .body(let thrown, _): throw thrown
                 }
             }
         }
     }
 
     extension PostgreSQL.Database.Engine {
-        /// Runs `body` with a connection from the pool, waiting at most the configured acquire timeout for one. The
-        /// engine's errors come out as ``PostgreSQL/Error``; what `body` throws comes out unchanged.
-        func withConnection<T: Sendable>(
-            _ body: @escaping @Sendable (PostgresConnection) async throws -> T
-        ) async throws -> T {
-            let acquired = Atomic<Bool>(false)
-            let timeout = configuration.acquireTimeout
-            let clock = clock
-            let client = client
-            return try await withThrowingTaskGroup(of: T?.self) { group in
-                group.addTask {
-                    let outcome: Result<T, any Swift.Error>
-                    do {
-                        outcome = try await client.withConnection { postgres in
-                            acquired.store(true, ordering: .releasing)
-                            do {
-                                return .success(try await body(postgres))
-                            } catch {
-                                return .failure(error)
-                            }
-                        }
-                    } catch {
-                        throw PostgreSQL.Error.translated(error)
-                    }
-                    return try outcome.get()
-                }
-                let failures = attempts.failures
-                group.addTask {
-                    var seen = failures
-                    while true {
-                        await self.attempts.failure(after: seen)
-                        if Task.isCancelled { return nil }
-                        seen = self.attempts.failures
-                        if acquired.load(ordering: .acquiring) { return nil }
-                        if let failure = await self.connectFailure() { throw failure }
-                    }
-                }
-                group.addTask {
-                    do { try await clock.sleep(for: timeout) } catch { return nil }
-                    guard acquired.load(ordering: .acquiring) else {
-                        throw PostgreSQL.Error(kind: .timeout, message: "no connection came free in \(timeout)")
-                    }
-                    return nil
-                }
-                defer { group.cancelAll() }
-                while let next = try await group.next() {
-                    if let value = next { return value }
-                }
-                throw PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled")
+        typealias Fault = PostgreSQL.Database.Fault
+
+        /// Leases a connection of the pool, waiting at most the configured acquire timeout for one, and runs `body`
+        /// on it on one of the database's threads, between `begin` and `end`. The connection goes back to the pool
+        /// when the body is over, and not earlier, also when the task is cancelled.
+        nonisolated(nonsending) func run<Value, Thrown: Swift.Error>(
+            begin: ISO.`9075`.Fragment?,
+            end: ISO.`9075`.Fragment?,
+            _ body: sending (borrowing PostgreSQL.Connection) throws(Thrown) -> sending Value
+        ) async throws(Fault<Thrown>) -> sending Value {
+            guard !closed.load(ordering: .acquiring) else {
+                throw .database(PostgreSQL.Error(kind: .closed, message: "the database is closed"))
             }
+            guard !Task.isCancelled else {
+                throw .database(PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled"))
+            }
+            let (connections, source) = AsyncThrowingStream<PostgresConnection, any Swift.Error>.makeStream()
+            let released = PostgreSQL.Database.Signal()
+            let acquired = PostgreSQL.Database.Flag()
+            let timeout = configuration.acquireTimeout
+            let (client, clock, attempts) = (client, clock, attempts)
+
+            // Holds the lease: it ends when `released` fires, which is when the body is over.
+            let holder = Task {
+                do {
+                    try await client.withConnection { postgres in
+                        acquired.set()
+                        source.yield(postgres)
+                        await released.wait()
+                    }
+                    source.finish()
+                } catch {
+                    source.finish(throwing: PostgreSQL.Error.translated(error))
+                }
+            }
+            // The pool retries a failed connection without end: a lease that waits learns why from outside it.
+            let failures = attempts.failures
+            let watcher = Task {
+                var seen = failures
+                while !Task.isCancelled {
+                    await attempts.failure(after: seen)
+                    if Task.isCancelled || acquired.isSet { return }
+                    seen = attempts.failures
+                    if let failure = await self.connectFailure() {
+                        source.finish(throwing: failure)
+                        return
+                    }
+                }
+            }
+            let timer = Task {
+                do { try await clock.sleep(for: timeout) } catch { return }
+                if !acquired.isSet {
+                    source.finish(throwing: PostgreSQL.Error(kind: .timeout, message: "no connection came free in \(timeout)"))
+                }
+            }
+            defer {
+                released.fire()
+                watcher.cancel()
+                timer.cancel()
+            }
+
+            var iterator = connections.makeAsyncIterator()
+            let leased: PostgresConnection?
+            do {
+                leased = try await iterator.next()
+            } catch {
+                holder.cancel()
+                throw .database(PostgreSQL.Error.translated(error))
+            }
+            guard let leased else {
+                holder.cancel()
+                throw .database(PostgreSQL.Error(kind: .cancelled, message: "the task was cancelled"))
+            }
+            let thread = workers.lease()
+            defer { workers.release(thread) }
+            return try await thread.worker.run(
+                on: PostgreSQL.Connection.Core(leased, logger: logger), begin: begin, end: end, body)
+        }
+    }
+
+    extension PostgreSQL.Database {
+        /// Set once, read from another task.
+        final class Flag: Sendable {
+            private let value = Atomic<Bool>(false)
+
+            var isSet: Bool { value.load(ordering: .acquiring) }
+
+            func set() { value.store(true, ordering: .releasing) }
         }
     }
 
@@ -345,39 +339,6 @@
                 return nil
             } catch {
                 return PostgreSQL.Error.translated(error)
-            }
-        }
-    }
-
-    /// Hands a closure to a thread and takes it back, so that no reference to it outlives the call that lent it:
-    /// `withoutActuallyEscaping` traps when the closure is still referenced on return, and a thread pool's work item
-    /// may be released after its caller resumes.
-    private final class Handoff<Body: Sendable>: Sendable {
-        private let body: Mutex<Body?>
-
-        init(_ body: Body) {
-            self.body = Mutex(body)
-        }
-
-        func take() -> Body? {
-            body.withLock { body in
-                defer { body = nil }
-                return body
-            }
-        }
-
-        func clear() {
-            body.withLock { $0 = nil }
-        }
-    }
-
-    extension PostgreSQL.Connection {
-        /// Executes `fragment`, throwing what fails as ``PostgreSQL/Error``.
-        func run(_ fragment: ISO.`9075`.Fragment) throws(PostgreSQL.Error) {
-            do {
-                _ = try execute(fragment)
-            } catch {
-                throw failures.original(of: error) ?? PostgreSQL.Error(error)
             }
         }
     }

@@ -2,17 +2,16 @@
     internal import PostgreSQL_SQL
     internal import Logging
     internal import NIOCore
-    internal import NIOPosix
     package import PostgresNIO
     internal import Synchronization
 
     extension PostgreSQL.Database {
-        /// What a database runs on: the engine's client, the task that runs it, the threads closures run on, and the
-        /// clock its acquire timeout runs on.
+        /// What a database runs on: the engine's client, the task that runs it, the thread actors bodies run on, and
+        /// the clock its acquire timeout runs on.
         package final class Engine: Sendable {
             let configuration: PostgreSQL.Configuration
             package let client: PostgresClient
-            let threads: NIOThreadPool
+            let workers: Workers
             let logger: Logger
             let runner: Task<Void, Never>
             let closed = Atomic<Bool>(false)
@@ -32,14 +31,12 @@
                 self.client = client
                 self.logger = logger
                 self.clock = clock
-                self.threads = NIOThreadPool(numberOfThreads: max(1, configuration.poolSize))
-                self.threads.start()
+                self.workers = Workers(count: max(1, configuration.poolSize))
                 self.runner = Task { await client.run() }
             }
 
             deinit {
                 runner.cancel()
-                threads.shutdownGracefully { _ in }
             }
         }
     }
@@ -49,7 +46,6 @@
             guard !closed.exchange(true, ordering: .acquiringAndReleasing) else { return }
             runner.cancel()
             await runner.value
-            try? await threads.shutdownGracefully()
         }
     }
 #endif

@@ -3,6 +3,7 @@
     public import ISO_9075_Call_Level_Interface
     internal import Logging
     internal import NIOCore
+    internal import NIOPosix
     internal import PostgresNIO
     internal import Synchronization
 
@@ -336,7 +337,9 @@
         /// configuration the engine can't connect with, such as an unreadable root certificate, is that reason too.
         func connectFailure() async -> PostgreSQL.Error? {
             do {
-                let connection = try await PostgresConnection.connect(configuration: try configuration.connection(), id: 0, logger: logger)
+                let connection = try await PostgresConnection.connect(
+                    on: MultiThreadedEventLoopGroup.singleton.any(),
+                    configuration: try configuration.connection(), id: 0, logger: logger)
                 try? await connection.close()
                 return nil
             } catch {

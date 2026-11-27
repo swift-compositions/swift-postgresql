@@ -2,6 +2,7 @@
     internal import PostgreSQL_SQL
     internal import Logging
     internal import NIOCore
+    internal import NIOPosix
     package import PostgresNIO
     internal import Synchronization
 
@@ -25,7 +26,10 @@
             ) {
                 let attempts = Attempts()
                 let logger = Logger(label: "PostgreSQL", factory: { _ in Listener(attempts: attempts) })
-                let client = PostgresClient(configuration: client, backgroundLogger: logger)
+                // Sockets on every platform. The engine's default on Apple platforms is Network.framework, which
+                // waits for a path to a port that refuses instead of failing: a lease then learns no reason in time.
+                let client = PostgresClient(
+                    configuration: client, eventLoopGroup: MultiThreadedEventLoopGroup.singleton, backgroundLogger: logger)
                 self.attempts = attempts
                 self.configuration = configuration
                 self.client = client

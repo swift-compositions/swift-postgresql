@@ -34,11 +34,11 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.29.0"),
         .package(
             url: "https://github.com/swift-compositions/swift-sql.git",
-            branch: "lent-connection",
+            branch: "main",
             traits: [.trait(name: "Tagged", condition: .when(traits: ["Tagged"]))]
         ),
         .package(url: "https://github.com/swift-atoms/swift-byte.git", branch: "main"),
-        .package(url: "https://github.com/swift-iso/swift-iso-9075.git", branch: "lent-connection"),
+        .package(url: "https://github.com/swift-iso/swift-iso-9075.git", branch: "main"),
         .package(url: "https://github.com/swift-compositions/swift-threads.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-4122.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-tagged.git", branch: "main"),

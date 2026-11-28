@@ -20,7 +20,7 @@ extension PostgreSQL.TextSearch.Query: QueryBindable {
 }
 
 extension PostgreSQL.TextSearch.Query: QueryDecodable {
-    public init(decoder: inout some QueryDecoder) throws(QueryDecodingError) {
+    public init(decoder: inout some QueryDecoder & ~Escapable) throws(QueryDecodingError) {
         self.init(try String(decoder: &decoder))
     }
 }

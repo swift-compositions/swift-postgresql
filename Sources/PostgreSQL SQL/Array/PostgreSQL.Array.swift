@@ -41,7 +41,7 @@ extension PostgreSQL.Array: QueryExpression, QueryBindable where Element: Postgr
 }
 
 extension PostgreSQL.Array: QueryDecodable {
-    public init(decoder: inout some QueryDecoder) throws(QueryDecodingError) {
+    public init(decoder: inout some QueryDecoder & ~Escapable) throws(QueryDecodingError) {
         let text = try String(decoder: &decoder)
         self.elements = try Literal(text).fields.map { field throws(QueryDecodingError) in
             var element = Field.Decoder(field: field)

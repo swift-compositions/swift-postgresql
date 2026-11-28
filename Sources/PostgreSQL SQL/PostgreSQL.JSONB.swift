@@ -31,7 +31,7 @@ extension PostgreSQL.JSONB: QueryBindable {
 }
 
 extension PostgreSQL.JSONB: QueryDecodable {
-    public init(decoder: inout some QueryDecoder) throws(QueryDecodingError) {
+    public init(decoder: inout some QueryDecoder & ~Escapable) throws(QueryDecodingError) {
         try self.init(text: try String(decoder: &decoder))
     }
 }
